@@ -1,0 +1,30 @@
+from setuptools import setup
+
+
+def read(filename):
+    with open(filename) as f:
+        return f.read()
+
+
+setup(
+    name="building_boundary",
+    version="0.1.0",
+    author="Chris Lucas",
+    author_email="chris.lucas@geodan.nl",
+    description=(
+        "A script to trace the boundary of a building (part) in a point cloud."),
+    license="MIT",
+    keywords="building boundary trace point cloud",
+    packages=['building_boundary'],
+    long_description=read('README.rst'),
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Topic :: Scientific/Engineering :: GIS",
+        "License :: OSI Approved :: MIT License",
+    ],
+    install_requires=[
+        'numpy',
+        'scipy',
+    ],
+    zip_safe=False
+)
