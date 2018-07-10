@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def read(filename):
@@ -7,7 +7,7 @@ def read(filename):
 
 
 setup(
-    name="building_boundary",
+    name="buildingboundary",
     version="0.1.0",
     author="Chris Lucas",
     author_email="chris.lucas@geodan.nl",
@@ -15,7 +15,7 @@ setup(
         "A script to trace the boundary of a building (part) in a point cloud."),
     license="MIT",
     keywords="building boundary trace point cloud",
-    packages=['building_boundary'],
+    packages=find_packages(),
     long_description=read('README.rst'),
     classifiers=[
         "Development Status :: 4 - Beta",

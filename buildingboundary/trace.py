@@ -16,7 +16,7 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
                    alignment=0, inflate=False):
     """
     """
-    boundary_points = concave_hull.compute(points, k)
+    boundary_points = concave_hull.compute(points, k, True)
 
     boundary_segments = []
     convex_fit(boundary_points, boundary_segments, max_error=max_error)
