@@ -7,7 +7,7 @@
 import math
 
 
-def angle_difference(a1, a2):
+def min_angle_difference(a1, a2):
     """
     Returns the minimal angle difference between two orientations.
 
@@ -31,6 +31,25 @@ def angle_difference(a1, a2):
     else:
         return pos1
     return pos1 if pos1 < pos2 else pos2
+
+
+def angle_difference(a1, a2):
+    """
+    Returns the angle difference between two orientations.
+
+    Parameters
+    ----------
+    a1 : float
+        An angle in radians
+    a2 : float
+        Another angle in radians
+
+    Returns
+    -------
+    angle : float
+        The angle difference in radians
+    """
+    return math.pi - abs(math.pi - abs(a1 - a2) % (math.pi*2))
 
 
 def to_positive_angle(angle):

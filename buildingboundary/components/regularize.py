@@ -7,7 +7,8 @@
 import math
 from itertools import combinations
 
-from ..utils.angle import angle_difference, weighted_angle_mean, to_positive_angle, perpendicular
+from ..utils.angle import (min_angle_difference, weighted_angle_mean,
+                           to_positive_angle, perpendicular)
 from .segmentation import merge_segments
 
 
@@ -24,7 +25,7 @@ def compute_primary_orientations(segments, num_points=float('inf'),
             a1 = s.orientation
             for o in orientations:
                 a2 = o['orientation']
-                angle_diff = angle_difference(a1, a2)
+                angle_diff = min_angle_difference(a1, a2)
                 if angle_diff < angle_epsilon:
                     sum_length = s.length + sum(o['lengths'])
                     mean = weighted_angle_mean([to_positive_angle(a1),
@@ -53,7 +54,7 @@ def compute_primary_orientations(segments, num_points=float('inf'),
         # add a perpendicular orientation if no approximate perpendicular
         # orientations were found
         combis = list(combinations(primary_orientations, 2))
-        diffs = [angle_difference(c[0], c[1]) for c in combis]
+        diffs = [min_angle_difference(c[0], c[1]) for c in combis]
         if max(diffs) < math.pi/2 - angle_epsilon:
             primary_orientations.append(main_orientation90)
         # make orientations close to perpendicular with the longest segment
@@ -61,7 +62,8 @@ def compute_primary_orientations(segments, num_points=float('inf'),
         else:
             for o in orientations:
                 if o['orientation'] != main_orientation:
-                    ad = angle_difference(o['orientation'], main_orientation)
+                    ad = min_angle_difference(o['orientation'],
+                                              main_orientation)
                     ad90 = abs(ad - math.pi/2)
                     if ad90 < angle_epsilon:
                         o['orientation'] = main_orientation90

@@ -8,7 +8,7 @@ import math
 import numpy as np
 
 from ..utils.error import ThresholdError
-from ..utils.angle import angle_difference
+from ..utils.angle import min_angle_difference
 
 
 def PCA(points):
@@ -128,7 +128,7 @@ class BoundarySegment(object):
         self._create_line()
 
     def target_orientation(self, primary_orientations):
-        po_diff = [angle_difference(self.orientation, o) for
+        po_diff = [min_angle_difference(self.orientation, o) for
                    o in primary_orientations]
         min_po_diff = min(po_diff)
         return primary_orientations[po_diff.index(min_po_diff)]
