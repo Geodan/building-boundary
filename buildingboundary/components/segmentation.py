@@ -35,21 +35,32 @@ def convex_fit(points, boundary_segments, max_error):
 
 
 def merge_segments(segments, merge_angle):
-    orientations = np.array([s.orientation for s in segments])
+    prev_segments = segments.copy()
+    n_segments = len(segments)
+    n_prev_segments = 0
+
+    while n_segments != n_prev_segments:
+        n_prev_segments = len(prev_segments)
+
+        orientations = np.array([s.orientation for s in prev_segments])
     ori_diff = np.fromiter((angle_difference(a1, a2) for
                             a1, a2 in zip(orientations,
                                           np.roll(orientations, -1))),
                            orientations.dtype)
     pivots_bool = ori_diff > merge_angle
-    pivots_idx = [0] + list(np.where(pivots_bool == True)[0] + 1)
+        pivots_idx = np.array([0] + list(np.where(pivots_bool == True)[0] + 1))
     new_segments = []
 
     for i, j in zip(pivots_idx[:-1], np.roll(pivots_idx, -1)[:-1]):
-        points = []
-        for s in segments[i:j]:
-            points.extend(s.points)
+            points = [prev_segments[i].points[0]]
+            for s in prev_segments[i:j]:
+                points.extend(s.points[1:])
         merged_segment = BoundarySegment(np.array(points))
         merged_segment.fit_line(method='TLS')
         new_segments.append(merged_segment)
 
+        n_segments = len(new_segments)
+        prev_segments = new_segments
+
+    return new_segments
     return new_segments
