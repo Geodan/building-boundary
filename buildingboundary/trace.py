@@ -10,10 +10,12 @@ from .components.segmentation import convex_fit, merge_segments
 from .components.intersect import compute_intersections
 from .components.regularize import compute_primary_orientations, regularize_lines
 from .components.align import align_by_intercept
+from .utils.angle import perpendicular
 
 
 def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
-                   max_intersect_distance=float('inf'), alignment=0, inflate=False):
+                   max_intersect_distance=float('inf'), alignment=0,
+                   primary_orientations=None, inflate=False):
     """
     """
     boundary_points = concave_hull.compute(points, k, True)
@@ -29,8 +31,10 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
         vertices = compute_intersections(boundary_segments)
         return vertices
 
-    primary_orientations = compute_primary_orientations(boundary_segments,
-                                                        num_points)
+    if primary_orientations is None:
+        primary_orientations = compute_primary_orientations(boundary_segments, num_points)
+    elif len(primary_orientations) == 1:
+        primary_orientations.append(perpendicular(primary_orientations[0]))
 
     boundary_segments = regularize_lines(boundary_segments,
                                          primary_orientations,
