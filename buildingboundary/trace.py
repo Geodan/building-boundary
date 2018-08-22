@@ -13,7 +13,7 @@ from .components.align import align_by_intersept
 
 
 def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
-                   alignment=0, inflate=False):
+                   max_intersect_distance=float('inf'), alignment=0, inflate=False):
     """
     """
     boundary_points = concave_hull.compute(points, k, True)
@@ -44,6 +44,7 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
     if inflate:
         for s in boundary_segments:
             s.inflate()
-        vertices = compute_intersections(boundary_segments)
+
+    vertices = compute_intersections(boundary_segments, max_intersect_distance)
 
     return vertices
