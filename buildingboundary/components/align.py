@@ -7,7 +7,7 @@
 import numpy as np
 
 
-def align_by_intersept(segments, max_diff):
+def align_by_intercept(segments, max_diff):
     d = {}
     for s in segments:
         if round(s.slope, 4) in d:
@@ -16,10 +16,10 @@ def align_by_intersept(segments, max_diff):
             d[round(s.slope, 4)] = [s]
 
     for v in d.values():
-        intersepts = np.array([x.intersept for x in v])
-        order = np.argsort(intersepts)
-        intersepts_sorted = intersepts[order]
-        diff_idx = [0]+list(np.where(np.diff(intersepts_sorted) >
+        intercepts = np.array([x.intercept for x in v])
+        order = np.argsort(intercepts)
+        intercepts_sorted = intercepts[order]
+        diff_idx = [0]+list(np.where(np.diff(intercepts_sorted) >
                                      max_diff)[0] + 1)+[len(v)]
 
         clusters = [order[x:y] for x, y in
@@ -27,6 +27,6 @@ def align_by_intersept(segments, max_diff):
 
         for c in clusters:
             if len(c) > 1:
-                new_intersept = np.mean(intersepts[c])
+                new_intercept = np.mean(intercepts[c])
                 for i in c:
-                    v[i].change_intersept(new_intersept)
+                    v[i].change_intercept(new_intercept)

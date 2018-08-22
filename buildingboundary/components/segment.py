@@ -32,16 +32,16 @@ class BoundarySegment(object):
             if dx == 0:
                 dx = 0.000001
             self.slope = dy / dx
-            self.intersept = (np.mean(self.points[:, 1]) -
+            self.intercept = (np.mean(self.points[:, 1]) -
                               np.mean(self.points[:, 0]) * self.slope)
         else:
             if method == 'OLS':
-                self.slope, self.intersept = np.polyfit(self.points[:, 0],
+                self.slope, self.intercept = np.polyfit(self.points[:, 0],
                                                         self.points[:, 1], 1)
             elif method == 'TLS':
                 _, eigenvectors = PCA(self.points)
                 self.slope = eigenvectors[1, 0] / eigenvectors[0, 0]
-                self.intersept = (np.mean(self.points[:, 1]) -
+                self.intercept = (np.mean(self.points[:, 1]) -
                                   np.mean(self.points[:, 0]) * self.slope)
             else:
                 raise NotImplementedError("Chosen method not available.")
@@ -118,12 +118,12 @@ class BoundarySegment(object):
         dy = d / math.cos(-angle)
 
         side = (self.slope * self.points[furthest_point, 0] -
-                self.points[furthest_point, 1] + self.intersept)
+                self.points[furthest_point, 1] + self.intercept)
 
         if side < 0:
-            self.intersept += dy
+            self.intercept += dy
         else:
-            self.intersept -= dy
+            self.intercept -= dy
 
         self._create_line()
 
@@ -161,7 +161,7 @@ class BoundarySegment(object):
             The coordinates of intersection. Returns False if no intersection
             found.
         """
-        line_self = np.array([self.slope, -1, -self.intersept])
+        line_self = np.array([self.slope, -1, -self.intercept])
         line_other = np.array([line[0], -1, -line[1]])
         d = line_self[0] * line_other[1] - line_self[1] * line_other[0]
         dx = line_self[2] * line_other[1] - line_self[1] * line_other[2]

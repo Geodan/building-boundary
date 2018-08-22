@@ -9,7 +9,7 @@ import concave_hull
 from .components.segmentation import convex_fit, merge_segments
 from .components.intersect import compute_intersections
 from .components.regularize import compute_primary_orientations, regularize_lines
-from .components.align import align_by_intersept
+from .components.align import align_by_intercept
 
 
 def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
@@ -37,9 +37,7 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
                                          merge_angle)
 
     if alignment != 0:
-        align_by_intersept(boundary_segments, alignment)
-
-    vertices = compute_intersections(boundary_segments)
+        align_by_intercept(boundary_segments, alignment)
 
     if inflate:
         for s in boundary_segments:
