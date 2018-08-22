@@ -30,7 +30,7 @@ class BoundarySegment(object):
         elif len(self.points) == 2:
             dx, dy = np.diff(self.points, axis=0)[0]
             if dx == 0:
-                dx = 0.000001
+                dx = 0.00000001
             self.slope = dy / dx
             self.intercept = (np.mean(self.points[:, 1]) -
                               np.mean(self.points[:, 0]) * self.slope)
@@ -54,25 +54,31 @@ class BoundarySegment(object):
 
         self._create_line()
 
-    @staticmethod
-    def _distance(p1, p2):
-        return math.hypot(p1[0]-p2[0], p1[1]-p2[1])
-
     def _create_line(self):
-        def f(x): return self.slope * x + self.intersept
+        if len(self.points) == 1:
+            raise ValueError('Not enough points to create a line.')
+        elif len(self.points) == 2:
+            dx, dy = np.diff(self.points, axis=0)[0]
+            self.end_points = self.points
+            self.length = math.hypot(dx, dy)
+            if dx == 0:
+                self.orientation = math.pi/2
+            elif dy == 0:
+                self.orientation = 0
+            else:
+                self.orientation = math.atan2(dy, dx)
+        else:
+            def f(x): return self.slope * x + self.intercept
+
         x = np.array([self.points[0, 0], self.points[-1, 0]])
         y = f(x)
         self.end_points = np.array((x, y)).T
 
-        if (self._distance(self.end_points[0], self.points[0]) >
-                self._distance(self.end_points[0], self.points[-1])):
-            self.end_points = self.end_points[::-1]
-
         dx = np.diff(x)
         dy = np.diff(y)
+
         self.length = math.hypot(abs(dx), abs(self.points[0, 1] -
                                               self.points[-1, 1]))
-#        self.length = math.hypot(dx, dy)
         self.orientation = math.atan2(dy, dx)
 
     def residuals(self):
