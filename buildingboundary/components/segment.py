@@ -70,16 +70,16 @@ class BoundarySegment(object):
         else:
             def f(x): return self.slope * x + self.intercept
 
-        x = np.array([self.points[0, 0], self.points[-1, 0]])
-        y = f(x)
-        self.end_points = np.array((x, y)).T
+            x = np.array([self.points[0, 0], self.points[-1, 0]])
+            y = f(x)
+            self.end_points = np.array((x, y)).T
 
-        dx = np.diff(x)
-        dy = np.diff(y)
+            dx = np.diff(x)
+            dy = np.diff(y)
 
-        self.length = math.hypot(abs(dx), abs(self.points[0, 1] -
-                                              self.points[-1, 1]))
-        self.orientation = math.atan2(dy, dx)
+            self.length = math.hypot(abs(dx), abs(self.points[0, 1] -
+                                                  self.points[-1, 1]))
+            self.orientation = math.atan2(dy, dx)
 
     def residuals(self):
         self.dist_points_line()
