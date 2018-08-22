@@ -171,8 +171,8 @@ class BoundarySegment(object):
         Returns
         -------
         x, y : float
-            The coordinates of intersection. Returns False if no intersection
-            found.
+            The coordinates of intersection. Returns empty array if no
+            intersection found.
         """
         line_self = np.array([self.slope, -1, -self.intercept])
         line_other = np.array([line[0], -1, -line[1]])
@@ -182,6 +182,6 @@ class BoundarySegment(object):
         if d != 0:
             x = dx / float(d)
             y = dy / float(d)
-            return x, y
+            return np.array([x, y])
         else:
-            return False
+            return np.array([])
