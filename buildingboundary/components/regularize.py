@@ -9,6 +9,7 @@ from itertools import combinations
 
 from ..utils.angle import (min_angle_difference, weighted_angle_mean,
                            to_positive_angle, perpendicular)
+from ..utils.error import ThresholdError
 from .segmentation import merge_segments
 
 
@@ -73,7 +74,8 @@ def compute_primary_orientations(segments, num_points=float('inf'),
     return primary_orientations
 
 
-def regularize_lines(boundary_segments, primary_orientations, merge_angle):
+def regularize_lines(boundary_segments, primary_orientations,
+                     merge_angle, max_error=None):
     prev_num_segments = 0
     num_segments = len(boundary_segments)
 
@@ -81,13 +83,21 @@ def regularize_lines(boundary_segments, primary_orientations, merge_angle):
         prev_num_segments = len(boundary_segments)
         for s in boundary_segments:
             target_orientation = s.target_orientation(primary_orientations)
-            s.regularize(math.tan(target_orientation))
+            try:
+                s.regularize(math.tan(target_orientation), max_error=max_error)
+            except ThresholdError:
+                pass
 
         boundary_segments = merge_segments(boundary_segments, merge_angle)
         num_segments = len(boundary_segments)
 
     for s in boundary_segments:
         target_orientation = s.target_orientation(primary_orientations)
-        s.regularize(math.tan(target_orientation))
+        try:
+            s.regularize(math.tan(target_orientation), max_error=max_error)
+        except ThresholdError:
+                pass
+
+    boundary_segments = merge_segments(boundary_segments, merge_angle)
 
     return boundary_segments

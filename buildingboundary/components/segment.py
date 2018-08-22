@@ -47,7 +47,7 @@ class BoundarySegment(object):
                 raise NotImplementedError("Chosen method not available.")
 
             if max_error is not None:
-                residuals = self._residuals()
+                residuals = self.residuals()
                 if residuals > max_error:
                     raise ThresholdError("Could not fit a proper line. Error:\
                                          {}".format(residuals))
@@ -75,7 +75,7 @@ class BoundarySegment(object):
 #        self.length = math.hypot(dx, dy)
         self.orientation = math.atan2(dy, dx)
 
-    def _residuals(self):
+    def residuals(self):
         self.dist_points_line()
 
         return sum(abs(self.distances)) / len(self.points)
@@ -133,13 +133,20 @@ class BoundarySegment(object):
         min_po_diff = min(po_diff)
         return primary_orientations[po_diff.index(min_po_diff)]
 
-    def regularize(self, slope):
+    def regularize(self, slope, max_error=None):
         # https://math.stackexchange.com/questions/1377716/how-to-find-a-least-squares-line-with-a-known-slope
         if not np.isclose(slope, math.tan(self.orientation)):
             self.slope = slope
             self.intercept = (sum(self.points[:, 1] -
                                   self.slope * self.points[:, 0]) /
                               len(self.points))
+
+            if max_error is not None:
+                residuals = self.residuals()
+                if residuals > max_error:
+                    raise ThresholdError("Could not fit a proper line. Error:\
+                                         {}".format(residuals))
+
             self._create_line()
 
     def change_intercept(self, intercept):

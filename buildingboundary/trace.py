@@ -36,9 +36,8 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
     elif len(primary_orientations) == 1:
         primary_orientations.append(perpendicular(primary_orientations[0]))
 
-    boundary_segments = regularize_lines(boundary_segments,
-                                         primary_orientations,
-                                         merge_angle)
+    boundary_segments = regularize_lines(boundary_segments, primary_orientations,
+                                         merge_angle, max_error)
 
     if alignment != 0:
         align_by_intercept(boundary_segments, alignment)
