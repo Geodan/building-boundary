@@ -44,26 +44,37 @@ def merge_segments(segments, merge_angle):
         n_prev_segments = len(prev_segments)
 
         orientations = np.array([s.orientation for s in prev_segments])
-    ori_diff = np.fromiter((angle_difference(a1, a2) for
-                            a1, a2 in zip(orientations,
-                                          np.roll(orientations, -1))),
-                           orientations.dtype)
-    pivots_bool = ori_diff > merge_angle
+        ori_diff = np.fromiter((angle_difference(a1, a2) for
+                                a1, a2 in zip(orientations,
+                                              np.roll(orientations, -1))),
+                               orientations.dtype)
+        pivots_bool = ori_diff > merge_angle
         pivots_idx = np.array([0] + list(np.where(pivots_bool == True)[0] + 1))
-    new_segments = []
+        new_segments = []
 
-    for i, j in zip(pivots_idx[:-1], np.roll(pivots_idx, -1)[:-1]):
+        for i, j in zip(pivots_idx[:-1], np.roll(pivots_idx, -1)[:-1]):
             points = [prev_segments[i].points[0]]
             for s in prev_segments[i:j]:
                 points.extend(s.points[1:])
-        merged_segment = BoundarySegment(np.array(points))
-        merged_segment.fit_line(method='TLS')
-        new_segments.append(merged_segment)
+            merged_segment = BoundarySegment(np.array(points))
+            merged_segment.fit_line(method='TLS')
+            new_segments.append(merged_segment)
 
         n_segments = len(new_segments)
         prev_segments = new_segments
 
     return new_segments
+
+
+def check_error(segments, max_error):
+    invalid_segments = []
+    for i, s in enumerate(segments):
+        error = s.residuals()
+        if error > max_error:
+            invalid_segments.append(i)
+    return invalid_segments
+
+
 def remove_small_corners(segments, n_points=2):
     to_remove = []
     n_segments = len(segments)
