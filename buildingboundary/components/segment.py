@@ -83,7 +83,7 @@ class BoundarySegment(object):
     def dist_points_line(self):
         # https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
         self.distances = (abs(self.slope * self.points[:, 0] +
-                              -self.points[:, 1] + self.intersept) /
+                              -self.points[:, 1] + self.intercept) /
                           math.sqrt(self.slope ** 2 + 1))
 
     def side_points_line(self):
@@ -137,13 +137,13 @@ class BoundarySegment(object):
         # https://math.stackexchange.com/questions/1377716/how-to-find-a-least-squares-line-with-a-known-slope
         if not np.isclose(slope, math.tan(self.orientation)):
             self.slope = slope
-            self.intersept = (sum(self.points[:, 1] -
+            self.intercept = (sum(self.points[:, 1] -
                                   self.slope * self.points[:, 0]) /
                               len(self.points))
             self._create_line()
 
-    def change_intersept(self, intersept):
-        self.intersept = intersept
+    def change_intercept(self, intercept):
+        self.intercept = intercept
         self._create_line()
 
     def line_intersect(self, line):
