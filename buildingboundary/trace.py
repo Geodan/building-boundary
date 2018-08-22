@@ -25,6 +25,8 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
 
     boundary_segments = merge_segments(boundary_segments, merge_angle)
 
+    boundary_segments = remove_small_corners(boundary_segments)
+
     if len(boundary_segments) in [0, 1, 2]:
         return []
     elif len(boundary_segments) == 3:

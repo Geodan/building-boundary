@@ -4,6 +4,7 @@
 @author: Chris Lucas
 """
 
+import math
 import numpy as np
 from scipy.spatial import ConvexHull
 
@@ -63,4 +64,28 @@ def merge_segments(segments, merge_angle):
         prev_segments = new_segments
 
     return new_segments
+def remove_small_corners(segments, n_points=2):
+    to_remove = []
+    n_segments = len(segments)
+
+    for i in range(n_segments):
+        s = segments[i]
+        if len(s.points) <= n_points:
+
+            # Edge cases for first and last segment
+            if i == 0:
+                angle = angle_difference(segments[n_segments-1].orientation,
+                                         segments[1].orientation)
+            elif i == n_segments-1:
+                angle = angle_difference(segments[i-1].orientation,
+                                         segments[0].orientation)
+            else:
+                angle = angle_difference(segments[i-1].orientation,
+                                         segments[i+1].orientation)
+
+            if (angle > math.radians(80) and angle < math.radians(100)):
+                to_remove.append(i)
+
+    new_segments = [s for i, s in enumerate(segments) if i not in to_remove]
+
     return new_segments
