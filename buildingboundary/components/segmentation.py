@@ -40,8 +40,13 @@ def merge_segments(segments, merge_angle):
     n_segments = len(segments)
     n_prev_segments = 0
 
+    merged_segments = []
+    iteration = 0
+
     while n_segments != n_prev_segments:
         n_prev_segments = len(prev_segments)
+
+        merged_segments.append([])
 
         orientations = np.array([s.orientation for s in prev_segments])
         ori_diff = np.fromiter((angle_difference(a1, a2) for
@@ -52,27 +57,37 @@ def merge_segments(segments, merge_angle):
         pivots_idx = np.array([0] + list(np.where(pivots_bool == True)[0] + 1))
         new_segments = []
 
-        for i, j in zip(pivots_idx[:-1], np.roll(pivots_idx, -1)[:-1]):
-            points = [prev_segments[i].points[0]]
-            for s in prev_segments[i:j]:
+        for i, (k, n) in enumerate(zip(pivots_idx[:-1], np.roll(pivots_idx, -1)[:-1])):
+            points = [prev_segments[k].points[0]]
+            for s in prev_segments[k:n]:
                 points.extend(s.points[1:])
             merged_segment = BoundarySegment(np.array(points))
             merged_segment.fit_line(method='TLS')
             new_segments.append(merged_segment)
 
+            merged_segments[-1].append(list(range(k, n)))
+
         n_segments = len(new_segments)
         prev_segments = new_segments
 
-    return new_segments
+        iteration += 1
 
+    # track merged segments
+    if iteration > 2:
+        prev_merged_segments = merged_segments[-2]
+        for next_merged_segments in merged_segments[::-1][2:]:
+            new_merged_segments = []
+            for s in prev_merged_segments:
+                new_segment = []
+                for j in s:
+                    new_segment.extend(next_merged_segments[j])
+                new_merged_segments.append(new_segment)
+            prev_merged_segments = new_merged_segments.copy()
+        merged_segments = new_merged_segments
+    else:
+        merged_segments = merged_segments[0]
 
-def check_error(segments, max_error):
-    invalid_segments = []
-    for i, s in enumerate(segments):
-        error = s.residuals()
-        if error > max_error:
-            invalid_segments.append(i)
-    return invalid_segments
+    return new_segments, merged_segments
 
 
 def remove_small_corners(segments, n_points=2):
@@ -99,4 +114,4 @@ def remove_small_corners(segments, n_points=2):
 
     new_segments = [s for i, s in enumerate(segments) if i not in to_remove]
 
-    return new_segments
+    return new_segments, to_remove

@@ -9,7 +9,9 @@ import concave_hull
 from .components.segmentation import (convex_fit, merge_segments,
                                       remove_small_corners)
 from .components.intersect import compute_intersections
-from .components.regularize import compute_primary_orientations, regularize_lines
+from .components.regularize import (compute_primary_orientations,
+                                    regularize_lines)
+from .components.assess import check_error, restore
 from .components.align import align_by_intercept
 from .utils.angle import perpendicular
 
@@ -27,23 +29,26 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
     k : int
         The amount of nearest neighbors used in the concave hull algorithm
     max_error : float
-        The maximum average error (distance) the points make with the fitted line
+        The maximum average error (distance) the points make with the fitted
+        line
     merge_angle : float
         The angle (in radians) difference within two segments will be merged
     num_points : int, optional
-        The number of points a segment needs to be supported by to be considered
-        a primary orientation. Will be ignored if primary orientations are set
-        manually.
+        The number of points a segment needs to be supported by to be
+        considered a primary orientation. Will be ignored if primary
+        orientations are set manually.
     max_intersect_distance : float, optional
         The maximum distance an found intersection can be from the segments.
     alignment : float, optional
-        If set segments will be aligned (their intercept be set equal by averaging)
-        if the difference between their x-axis intercepts is within this number.
+        If set segments will be aligned (their intercept be set equal by
+        averaging) if the difference between their x-axis intercepts is within
+        this number.
     primary_orientations : list of floats, optional
-        The desired primary orientations (in radians) of the boundary. If set manually
-        here these orientations will not be computed.
+        The desired primary orientations (in radians) of the boundary. If set
+        manually here these orientations will not be computed.
     inflate : bool
-        If set to true the fit lines will be moved to the furthest outside point.
+        If set to true the fit lines will be moved to the furthest outside
+        point.
 
     Returns
     -------
@@ -54,10 +59,11 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
 
     boundary_segments = []
     convex_fit(boundary_points, boundary_segments, max_error=max_error)
+    original_segments = boundary_segments.copy()
 
-    boundary_segments = merge_segments(boundary_segments, merge_angle)
+    boundary_segments, merged_segments = merge_segments(boundary_segments, merge_angle)
 
-    boundary_segments = remove_small_corners(boundary_segments)
+    boundary_segments, removed_segments = remove_small_corners(boundary_segments)
 
     if len(boundary_segments) in [0, 1, 2]:
         return []
@@ -72,6 +78,10 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
 
     boundary_segments = regularize_lines(boundary_segments, primary_orientations,
                                          merge_angle, max_error)
+
+    invalid_segments = check_error(boundary_segments, max_error*1.5)
+    boundary_segments = restore(boundary_segments, original_segments, invalid_segments,
+                                merged_segments, removed_segments)
 
     if alignment != 0:
         align_by_intercept(boundary_segments, alignment)
