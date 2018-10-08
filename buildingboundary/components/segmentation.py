@@ -9,7 +9,7 @@ import numpy as np
 from scipy.spatial import ConvexHull
 
 from ..utils.error import ThresholdError
-from ..utils.angle import angle_difference
+from ..utils.angle import angle_difference, min_angle_difference
 from .segment import BoundarySegment
 
 
@@ -45,22 +45,33 @@ def merge_segments(segments, merge_angle):
 
     while n_segments != n_prev_segments:
         n_prev_segments = len(prev_segments)
+        new_segments = []
 
         merged_segments.append([])
 
         orientations = np.array([s.orientation for s in prev_segments])
-        ori_diff = np.fromiter((angle_difference(a1, a2) for
+        ori_diff = np.fromiter((min_angle_difference(a1, a2) for
                                 a1, a2 in zip(orientations,
                                               np.roll(orientations, -1))),
                                orientations.dtype)
         pivots_bool = ori_diff > merge_angle
-        pivots_idx = np.array([0] + list(np.where(pivots_bool == True)[0] + 1))
-        new_segments = []
+        pivots_idx = list(np.where(pivots_bool == True)[0] + 1)
 
-        for i, (k, n) in enumerate(zip(pivots_idx[:-1], np.roll(pivots_idx, -1)[:-1])):
+        # edge case
+        if pivots_idx[-1] > (len(prev_segments)-1):
+            pivots_idx[-1] = 0
+
+        for i, (k, n) in enumerate(zip(pivots_idx, np.roll(pivots_idx, -1))):
             points = [prev_segments[k].points[0]]
-            for s in prev_segments[k:n]:
-                points.extend(s.points[1:])
+            if k < n:
+                for s in prev_segments[k:n]:
+                    points.extend(s.points[1:])
+            else:  # edge case
+                for s in prev_segments[k:]:
+                    points.extend(s.points[1:])
+                for s in prev_segments[:n]:
+                    points.extend(s.points[1:])
+
             merged_segment = BoundarySegment(np.array(points))
             merged_segment.fit_line(method='TLS')
             new_segments.append(merged_segment)
@@ -109,6 +120,7 @@ def remove_small_corners(segments, n_points=2):
                 angle = angle_difference(segments[i-1].orientation,
                                          segments[i+1].orientation)
 
+            # remove if close to 90 degree angle
             if (angle > math.radians(80) and angle < math.radians(100)):
                 to_remove.append(i)
 
