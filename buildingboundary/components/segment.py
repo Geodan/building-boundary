@@ -57,16 +57,16 @@ class BoundarySegment(object):
     def _create_line(self):
         if len(self.points) == 1:
             raise ValueError('Not enough points to create a line.')
-        elif len(self.points) == 2:
-            dx, dy = np.diff(self.points, axis=0)[0]
-            self.end_points = self.points
-            self.length = math.hypot(dx, dy)
-            if dx == 0:
-                self.orientation = math.pi/2
-            elif dy == 0:
-                self.orientation = 0
-            else:
-                self.orientation = math.atan2(dy, dx)
+        # elif len(self.points) == 2:
+        #     dx, dy = np.diff(self.points, axis=0)[0]
+        #     self.end_points = self.points
+        #     self.length = math.hypot(dx, dy)
+        #     if dx == 0:
+        #         self.orientation = math.pi/2
+        #     elif dy == 0:
+        #         self.orientation = 0
+        #     else:
+        #         self.orientation = math.atan2(dy, dx)
         else:
             def f(x): return self.slope * x + self.intercept
 
