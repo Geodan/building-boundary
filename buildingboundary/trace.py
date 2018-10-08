@@ -71,7 +71,7 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
         vertices = compute_intersections(boundary_segments)
         return vertices
 
-    if primary_orientations is None:
+    if primary_orientations is None or len(primary_orientations) == 0:
         primary_orientations = compute_primary_orientations(boundary_segments, num_points)
     elif len(primary_orientations) == 1:
         primary_orientations.append(perpendicular(primary_orientations[0]))
