@@ -13,10 +13,14 @@ from ..utils.angle import angle_difference, min_angle_difference
 from .segment import BoundarySegment
 
 
+def create_segments(points):
+    return zip(points, np.roll(points, -1))
+
+
 def convex_fit(points, boundary_segments, max_error):
     hull = ConvexHull(points)
     hull.vertices.sort()
-    segments = zip(hull.vertices, np.roll(hull.vertices, -1))
+    segments = create_segments(hull.vertices)
 
     for s in segments:
         if s[1]+1 == len(hull.points) or s[1] == 0:
@@ -31,7 +35,7 @@ def convex_fit(points, boundary_segments, max_error):
             segment = BoundarySegment(s_points)
             segment.fit_line(method='TLS', max_error=max_error)
             boundary_segments.append(segment)
-        except ThresholdError:
+        except:  # ThresholdError:
             convex_fit(s_points, boundary_segments, max_error=max_error)
 
 
@@ -50,7 +54,7 @@ def merge_segments(segments, merge_angle):
         merged_segments.append([])
 
         orientations = np.array([s.orientation for s in prev_segments])
-        ori_diff = np.fromiter((min_angle_difference(a1, a2) for
+        ori_diff = np.fromiter((angle_difference(a1, a2) for
                                 a1, a2 in zip(orientations,
                                               np.roll(orientations, -1))),
                                orientations.dtype)
