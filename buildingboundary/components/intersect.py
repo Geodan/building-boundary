@@ -45,10 +45,10 @@ def compute_intersections(segments, max_interect_distance=float('inf')):
             # and intersect using the new line
             if i != num_segments - 1:
                 p = segments[i + 1].end_points[0]
-                slope = -(1 / segments[i + 1].slope)
+                slope = -(1 / segments[i + 1].slope) if segments[i + 1].slope != 0 else -(1 / 0.00000001)
             else:
                 p = segments[0].end_points[0]
-                slope = -(1 / segments[0].slope)
+                slope = -(1 / segments[0].slope) if segments[0].slope != 0 else -(1 / 0.00000001)
 
             intercept = - slope * p[0] + p[1]
             intersect = segments[i].line_intersect([slope, intercept])
