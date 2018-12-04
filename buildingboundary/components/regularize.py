@@ -88,7 +88,7 @@ def regularize_lines(boundary_segments, primary_orientations,
             except ThresholdError:
                 pass
 
-        boundary_segments, merged_segments = merge_segments(boundary_segments, merge_angle)
+        boundary_segments, _ = merge_segments(boundary_segments, merge_angle)
         num_segments = len(boundary_segments)
 
     for s in boundary_segments:
@@ -96,8 +96,6 @@ def regularize_lines(boundary_segments, primary_orientations,
         try:
             s.regularize(math.tan(target_orientation), max_error=max_error)
         except ThresholdError:
-                pass
-
-#    boundary_segments, merged_segments = merge_segments(boundary_segments, merge_angle)
+            pass
 
     return boundary_segments
