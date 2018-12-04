@@ -54,31 +54,25 @@ class BoundarySegment(object):
 
         self._create_line()
 
+    def _point_on_line(self, point):
+        # https://math.stackexchange.com/questions/717746/closest-point-on-a-line-to-another-point
+        if self.slope == 0:
+            return [point[0], self.intercept]
+        perp_slope = 1 / (-1 * self.slope)
+        perp_intercept = point[1] - (point[0] * perp_slope)
+        a = np.array([[self.slope, -1], [perp_slope, -1]])
+        b = np.array([-self.intercept, -perp_intercept])
+        return np.linalg.solve(a, b)
+
     def _create_line(self):
         if len(self.points) == 1:
             raise ValueError('Not enough points to create a line.')
-        # elif len(self.points) == 2:
-        #     dx, dy = np.diff(self.points, axis=0)[0]
-        #     self.end_points = self.points
-        #     self.length = math.hypot(dx, dy)
-        #     if dx == 0:
-        #         self.orientation = math.pi/2
-        #     elif dy == 0:
-        #         self.orientation = 0
-        #     else:
-        #         self.orientation = math.atan2(dy, dx)
         else:
-            def f(x): return self.slope * x + self.intercept
-
-            x = np.array([self.points[0, 0], self.points[-1, 0]])
-            y = f(x)
-            self.end_points = np.array((x, y)).T
-
-            dx = np.diff(x)
-            dy = np.diff(y)
-
-            self.length = math.hypot(abs(dx), abs(self.points[0, 1] -
-                                                  self.points[-1, 1]))
+            start_point = self._point_on_line(self.points[0])
+            end_point = self._point_on_line(self.points[-1])
+            self.end_points = np.array([start_point, end_point])
+            dx, dy = np.diff(self.end_points, axis=0)[0]
+            self.length = math.hypot(dx, dy)
             self.orientation = math.atan2(dy, dx)
 
     def residuals(self):
