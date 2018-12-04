@@ -59,11 +59,11 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
 
     boundary_segments = []
     convex_fit(boundary_points, boundary_segments, max_error=max_error)
-    original_segments = boundary_segments.copy()
+    # original_segments = boundary_segments.copy()
 
     boundary_segments, merged_segments = merge_segments(boundary_segments, merge_angle)
 
-    boundary_segments, removed_segments = remove_small_corners(boundary_segments)
+    # boundary_segments, removed_segments = remove_small_corners(boundary_segments)
 
     if len(boundary_segments) in [0, 1, 2]:
         return []
@@ -79,9 +79,9 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
     boundary_segments = regularize_lines(boundary_segments, primary_orientations,
                                          merge_angle, max_error)
 
-    invalid_segments = check_error(boundary_segments, max_error*1.5)
-    boundary_segments = restore(boundary_segments, original_segments, invalid_segments,
-                                merged_segments, removed_segments)
+    # invalid_segments = check_error(boundary_segments, max_error*1.5)
+    # boundary_segments = restore(boundary_segments, original_segments, invalid_segments,
+    #                             merged_segments, removed_segments)
 
     if alignment != 0:
         align_by_intercept(boundary_segments, alignment)
