@@ -6,6 +6,23 @@
 
 
 def check_error(segments, max_error):
+    """
+    Checks the error (average distance between the points and
+    the fitted line) of the segments.
+
+    Parameters
+    ----------
+    segments : list of segments
+        The wall segments to check.
+    max_error : int or float
+        The error at which a segments will be classified as invalid.
+
+    Returns
+    -------
+    invalid_segments : list of int
+        The indices of the segments which have a higher error than
+        the given max error.
+    """
     invalid_segments = []
     for i, s in enumerate(segments):
         error = s.residuals()
@@ -16,6 +33,30 @@ def check_error(segments, max_error):
 
 def restore(segments, original_segments, invalid_segments,
             merged_segments, removed_segments):
+    """
+    Replaces invalid segments with earlier segments.
+
+    Parameters
+    ----------
+    segments : list of segments
+        The current wall segments.
+    original_segments : list of segments
+        The wall segments before any merging took place.
+    invalid_segments : list of int
+        The indices of the segments which have a higher error than
+        the given max error.
+    merged_segments : list of list of int
+        The indices of the segments that were merged grouped together
+        in lists.
+    removed_segments : list of int
+        The indices of the segments that got removed.
+
+    Returns
+    -------
+    segments : list of segments
+        The segments with the original segments restored in place of the
+        invalid segments.
+    """
     merged_segments = [s for i, s in enumerate(merged_segments) if
                        i not in removed_segments]
     offset = 0

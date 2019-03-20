@@ -8,6 +8,18 @@ import numpy as np
 
 
 def align_by_intercept(segments, max_diff):
+    """
+    Aligns segments based on the difference of their interceptions
+    with the y-axis. If within a certain value of each other, the
+    average will be set as the new interception.
+
+    Parameters
+    ----------
+    segments : list of segments
+        The wall segments to align.
+    max_diff : int or float
+        The difference between the y-interceptions when to align.
+    """
     d = {}
     for s in segments:
         if round(s.slope, 4) in d:

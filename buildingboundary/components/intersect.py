@@ -9,11 +9,45 @@ import numpy as np
 
 
 def distance(p1, p2):
+    """
+    The euclidean distance between two points.
+
+    Parameters
+    ----------
+    p1 : list or array
+        A point in 2D space.
+    p2 : list or array
+        A point in 2D space.
+
+    Returns
+    -------
+    distance : float
+        The euclidean distance between the two points.
+    """
     return math.hypot(*(p1-p2))
 
 
-def dist_point_to_line_segment(point, segment):
-    # http://geomalgorithms.com/a02-_lines.html
+def distance_point_segment(point, segment):
+    """
+    The euclidean distance between between a point and
+    a line segment.
+
+    ref: http://geomalgorithms.com/a02-_lines.html
+
+    Parameters
+    ----------
+    point : list or array
+        A point in 2D space.
+    segment : list or array
+        A line segment defined by two points.
+
+    Returns
+    -------
+    distance : float
+        The euclidean distance between the point and
+        the line segment.
+    """
+    #
     v = segment[1] - segment[0]
     w = point - segment[0]
 
@@ -30,13 +64,51 @@ def dist_point_to_line_segment(point, segment):
     return distance(point, pb)
 
 
-def distance_to_intersect(segment1, segment2, intersect):
-    distance1 = dist_point_to_line_segment(intersect, segment1.end_points)
-    distance2 = dist_point_to_line_segment(intersect, segment2.end_points)
+def min_distance_segments_point(segment1, segment2, point):
+    """
+    The minimum euclidean distance between a point and
+    two line segments.
+
+    Parameters
+    ----------
+    segment1 : list or array
+        A line segment defined by two points.
+    segment2 : list or array
+        A line segment defined by two points.
+    point : list or array
+        A point in 2D space.
+
+    Returns
+    -------
+    distance : float
+        The minimum euclidean distance between the point and
+        the two line segments.
+    """
+    distance1 = distance_point_segment(point, segment1)
+    distance2 = distance_point_segment(point, segment2)
     return min([distance1, distance2])
 
 
-def compute_intersections(segments, max_interect_distance=float('inf')):
+def compute_intersections(segments, max_distance=float('inf')):
+    """
+    Computes the intersections between the segments in sequence. If
+    no intersection could be found or the intersection is at a further
+    distance than the given max distance, a perpendicular line will be
+    added in between the two segments.
+
+    Parameters
+    ----------
+    segments : list of BoundarySegment
+        The wall segments to compute intersections for.
+    max_distance : float or int, optional
+        The maximum distance between an intersection and the
+        corrisponding segments.
+
+    Returns
+    -------
+    intersections : (Mx1) array
+        The computed intersections.
+    """
     intersections = []
     num_segments = len(segments)
     for i in range(num_segments):
@@ -50,9 +122,10 @@ def compute_intersections(segments, max_interect_distance=float('inf')):
                                              segment2.intercept])
 
         if any(intersect):
-            intersect_distance = distance_to_intersect(segment1, segment2,
-                                                       intersect)
-            if intersect_distance < max_interect_distance:
+            intersect_distance = min_distance_segments_point(segment1.end_points,
+                                                             segment2.end_points,
+                                                             intersect)
+            if intersect_distance < max_distance:
                 intersections.append(intersect)
             else:
                 intersect = np.array([])

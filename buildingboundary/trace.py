@@ -9,8 +9,8 @@ import concave_hull
 from .components.segmentation import (convex_fit, merge_segments,
                                       remove_small_corners)
 from .components.intersect import compute_intersections
-from .components.regularize import (compute_primary_orientations,
-                                    regularize_lines)
+from .components.regularize import (get_primary_orientations,
+                                    regularize_and_merge)
 from .components.assess import check_error, restore
 from .components.align import align_by_intercept
 from .utils.angle import perpendicular
@@ -61,7 +61,8 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
     convex_fit(boundary_points, boundary_segments, max_error=max_error)
     # original_segments = boundary_segments.copy()
 
-    boundary_segments, merged_segments = merge_segments(boundary_segments, merge_angle)
+    boundary_segments, merge_history = merge_segments(boundary_segments,
+                                                      merge_angle)
 
     # boundary_segments, removed_segments = remove_small_corners(boundary_segments)
 
@@ -72,12 +73,13 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
         return vertices
 
     if primary_orientations is None or len(primary_orientations) == 0:
-        primary_orientations = compute_primary_orientations(boundary_segments, num_points)
+        primary_orientations = get_primary_orientations(boundary_segments,
+                                                        num_points)
     elif len(primary_orientations) == 1:
         primary_orientations.append(perpendicular(primary_orientations[0]))
 
-    boundary_segments = regularize_lines(boundary_segments, primary_orientations,
-                                         merge_angle, max_error)
+    boundary_segments = regularize_and_merge(boundary_segments, primary_orientations,
+                                             merge_angle, max_error)
 
     # invalid_segments = check_error(boundary_segments, max_error*1.5)
     # boundary_segments = restore(boundary_segments, original_segments, invalid_segments,

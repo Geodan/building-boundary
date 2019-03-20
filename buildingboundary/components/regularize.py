@@ -4,8 +4,10 @@
 @author: Chris Lucas
 """
 
+import sys
 import math
-from itertools import combinations
+
+import numpy as np
 
 from ..utils.angle import (min_angle_difference, weighted_angle_mean,
                            to_positive_angle, perpendicular)
@@ -13,89 +15,291 @@ from ..utils.error import ThresholdError
 from .segmentation import merge_segments
 
 
-def compute_primary_orientations(segments, num_points=float('inf'),
-                                 angle_epsilon=0.1):
-    max_length = -1
-    orientations = []
-    for i, s in enumerate(segments):
-        if s.length > max_length:
-            longest_segment = i
-            max_length = s.length
+def get_primary_segments(segments, num_points=sys.maxsize):
+    """
+    Checks the segments and returns the segments which are supported
+    by at least the given number of points.
 
-        if len(s.points) > num_points:
-            a1 = s.orientation
-            for o in orientations:
-                a2 = o['orientation']
-                angle_diff = min_angle_difference(a1, a2)
-                if angle_diff < angle_epsilon:
-                    sum_length = s.length + sum(o['lengths'])
-                    mean = weighted_angle_mean([to_positive_angle(a1),
-                                                to_positive_angle(a2)],
-                                               [s.length/sum_length,
-                                                sum(o['lengths'])/sum_length])
-                    o['lengths'].append(s.length)
-                    o['orientation'] = mean
-                    break
-            else:
-                orientations.append({'orientation': a1,
-                                     'lengths': [s.length]})
+    Parameters
+    ----------
+    segments : list of BoundarySegment
+        The boundary (wall) segments of the building (part).
+    num_points : int, optional
+        The minimum number of points a segment needs to be supported by
+        to be considered a primary segment.
 
-    primary_orientations = [o['orientation'] for o in orientations]
+    Returns
+    -------
+    primary_segments : list of segments
+        The segments which are supported by at least the given number of
+        points.
+    """
+    primary_segments = [s for s in segments if len(s.points) > num_points]
+    return primary_segments
 
+
+def find_main_orientation(segments):
+    """
+    Checks which segment is supported by the most points and returns
+    the orientation of this segment.
+
+    Parameters
+    ----------
+    segments : list of BoundarySegment
+        The boundary (wall) segments of the building (part).
+
+    Returns
+    -------
+    main_orientation : float
+        The orientation of the segment supported by the most points.
+        In radians.
+    """
+    longest_segment = np.argmin([s.length for s in segments])
     main_orientation = segments[longest_segment].orientation
-    main_orientation90 = perpendicular(main_orientation)
-    if main_orientation not in primary_orientations:
-        primary_orientations.append(main_orientation)
+    return main_orientation
 
-    # if only one primary orientation is found, add an orientation
-    # perpendicular to it.
-    if len(primary_orientations) == 1:
-        primary_orientations.append(main_orientation90)
-    else:
-        # add a perpendicular orientation if no approximate perpendicular
-        # orientations were found
-        combis = list(combinations(primary_orientations, 2))
-        diffs = [min_angle_difference(c[0], c[1]) for c in combis]
-        if max(diffs) < math.pi/2 - angle_epsilon:
-            primary_orientations.append(main_orientation90)
-        # make orientations close to perpendicular with the longest segment
-        # exactly 90 degrees
+
+def sort_orientations(orientations):
+    """
+    Sort orientations by the length of the segments which have that
+    orientation.
+
+    Parameters
+    ----------
+    orientations : dict
+        The orientations and corrisponding lengths
+
+    Returns
+    -------
+    sorted_orientations : list of float
+
+    """
+    unsorted_orientations = [o['orientation'] for o in orientations]
+    lengths = [o['length'] for o in orientations]
+    sort = np.argsort(lengths)
+    sorted_orientations = np.array(unsorted_orientations)[sort].tolist()
+    return sorted_orientations
+
+
+def compute_primary_orientations(primary_segments, angle_epsilon=0.1):
+    """
+    Computes the primary orientations based on the given primary segments.
+
+    Parameters
+    ----------
+    primary_segments : list of BoundarySegment
+        The primary segments.
+    angle_epsilon : float, optional
+        Angles will be considered equal if the difference is within
+        this value (in radians).
+
+    Returns
+    -------
+    primary_orientations : list of float
+        The computed primary orientations in radians, sorted by the length
+        of the segments which have that orientation.
+    """
+    orientations = []
+
+    for s in primary_segments:
+        a1 = s.orientation
+        for o in orientations:
+            a2 = o['orientation']
+            angle_diff = min_angle_difference(a1, a2)
+            if angle_diff < angle_epsilon:
+                sum_length = s.length + o['length']
+                mean = weighted_angle_mean([to_positive_angle(a1),
+                                            to_positive_angle(a2)],
+                                           [s.length/sum_length,
+                                            o['length']/sum_length])
+                o['length'] += s.length
+                o['orientation'] = mean
+                break
         else:
-            for o in orientations:
-                if o['orientation'] != main_orientation:
-                    ad = min_angle_difference(o['orientation'],
-                                              main_orientation)
-                    ad90 = abs(ad - math.pi/2)
-                    if ad90 < angle_epsilon:
-                        o['orientation'] = main_orientation90
-            primary_orientations = list(set(o['orientation'] for
-                                            o in orientations))
+            orientations.append({'orientation': a1,
+                                 'length': s.length})
+
+    primary_orientations = sort_orientations(orientations)
 
     return primary_orientations
 
 
-def regularize_lines(boundary_segments, primary_orientations,
-                     merge_angle, max_error=None):
-    prev_num_segments = 0
-    num_segments = len(boundary_segments)
+def check_perpendicular(primary_orientations, angle_epsilon=0.1):
+    """
+    Checks if a perpendicular orientation to the main orientation
+    exists.
 
-    while num_segments != prev_num_segments:
-        prev_num_segments = len(boundary_segments)
-        for s in boundary_segments:
-            target_orientation = s.target_orientation(primary_orientations)
-            try:
-                s.regularize(math.tan(target_orientation), max_error=max_error)
-            except ThresholdError:
-                pass
+    Parameters
+    ----------
+    primary_orientations : list of floats
+        The primary orientations, where the first orientation in the
+        list is the main orientation (in radians).
+    angle_epsilon : float, optional
+        Angles will be considered equal if the difference is within
+        this value (in radians).
 
-        boundary_segments, _ = merge_segments(boundary_segments, merge_angle)
-        num_segments = len(boundary_segments)
+    Returns
+    -------
+     : bool
+        True if a perpendicular orientation to the main orientation
+    exists.
+    """
+    main_orientation = primary_orientations[0]
+    diffs = [min_angle_difference(main_orientation, a)
+             for a in primary_orientations[1:]]
+    diffs_perp = np.array(diffs) - math.pi/2
+    return min(np.abs(diffs_perp)) < angle_epsilon
 
-    for s in boundary_segments:
+
+def add_perpendicular(primary_orientations, angle_epsilon=0.1):
+    """
+    Adds an orientation perpendicular to the main orientation if no
+    approximate perpendicular orientation is present in the primary
+    orientations.
+
+    Parameters
+    ----------
+    primary_orientations : list of floats
+        The primary orientations, where the first orientation in the
+        list is the main orientation (in radians).
+    angle_epsilon : float, optional
+        Angles will be considered equal if the difference is within
+        this value (in radians).
+
+    Returns
+    -------
+    primary_orientations : list of floats
+        The refined primary orientations
+    """
+    main_orientation = primary_orientations[0]
+    # if only one primary orientation is found, add an orientation
+    # perpendicular to it.
+    if len(primary_orientations) == 1:
+        primary_orientations.append(perpendicular(main_orientation))
+    else:
+        # add a perpendicular orientation if no approximate perpendicular
+        # orientations were found
+        if not check_perpendicular(primary_orientations,
+                                   angle_epsilon=angle_epsilon):
+            primary_orientations.append(perpendicular(main_orientation))
+
+    return primary_orientations
+
+
+def get_primary_orientations(segments, num_points=sys.maxsize,
+                             angle_epsilon=0.1):
+    """
+    Computes the primary orientations of the building by checking the
+    number of points it is supported by. If multiple orientations are
+    found which are very close to each other, a mean orientation will be
+    taken. If no primary orientations can be found, the orientation of the
+    segment supported by the most points will be taken.
+
+    Parameters
+    ----------
+    segments : list of BoundarySegment
+        The boundary (wall) segments of the building (part).
+    num_points : int, optional
+        The minimum number of points a segment needs to be supported by
+        to be considered a primary segment.
+    angle_epsilon : float, optional
+        Angles will be considered equal if the difference is within
+        this value (in radians).
+
+    Returns
+    -------
+    primary_orientations : list of float
+        The computed primary orientations in radians.
+    """
+    primary_segments = get_primary_segments(segments, num_points=num_points)
+
+    if len(primary_segments) > 0:
+        primary_orientations = compute_primary_orientations(primary_segments,
+                                                            angle_epsilon)
+    else:
+        primary_orientations = [find_main_orientation(segments)]
+
+    primary_orientations = add_perpendicular(primary_orientations,
+                                             angle_epsilon=angle_epsilon)
+
+    return primary_orientations
+
+
+def regularize_segments(segments, primary_orientations, max_error=None):
+    """
+    Sets the orientation of the segments to the closest of the given
+    orientations.
+
+    Parameters
+    ----------
+    segments : list of BoundarySegment
+        The wall segments to regularize.
+    primary_orientations : list of floats
+        The orientations all other orientations will be set to, given
+        in radians.
+    max_error : float or int, optional
+        The maximum error a segment can have after regularization. If
+        above the original orientation will be kept.
+
+    Returns
+    -------
+    segments : list of BoundarySegment
+        The wall segments after regularization.
+    """
+    for s in segments:
         target_orientation = s.target_orientation(primary_orientations)
         try:
             s.regularize(math.tan(target_orientation), max_error=max_error)
         except ThresholdError:
             pass
 
-    return boundary_segments
+    return segments
+
+
+def regularize_and_merge(segments, primary_orientations,
+                         merge_angle, max_error=None):
+    """
+    Keeps regularizing and merging the segments until no changes
+    happen.
+
+    Parameters
+    ----------
+    segments : list of BoundarySegment
+        The wall segments to regularize.
+    primary_orientations : list of floats
+        The orientations all other orientations will be set to, given
+        in radians.
+    merge_angle : float or int
+        Two segments will be merged if the difference between their
+        orientations are within this value.
+    max_error : float or int, optional
+        The maximum error a segment can have after regularization. If
+        above the original orientation will be kept.
+
+    Returns
+    -------
+    segments : list of BoundarySegment
+        The wall segments after regularization and merging.
+    merge_history : list of list of int
+        The indices of all merged segments
+    """
+    prev_num_segments = 0
+    num_segments = len(segments)
+
+    merge_history = []
+
+    while num_segments != prev_num_segments:
+        prev_num_segments = len(segments)
+
+        segments = regularize_segments(segments, primary_orientations,
+                                       max_error=max_error)
+
+        segments, merge_history_part = merge_segments(segments, merge_angle)
+        merge_history.extend(merge_history_part)
+
+        num_segments = len(segments)
+
+    segments = regularize_segments(segments, primary_orientations,
+                                   max_error=max_error)
+
+    return segments, merge_history

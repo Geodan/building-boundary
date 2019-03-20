@@ -99,6 +99,19 @@ def weighted_angle_mean(angles, weights):
 
 
 def perpendicular(angle):
+    """
+    Returns the perpendicular angle to the given angle.
+
+    Parameters
+    ----------
+    angle : float or int
+        The given angle in radians
+
+    Returns
+    -------
+    perpendicular : float
+        The perpendicular to the given angle in radians
+    """
     perp = angle + math.pi/2
     if perp > math.pi:
         perp = angle - math.pi/2
