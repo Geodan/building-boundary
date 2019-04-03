@@ -151,13 +151,18 @@ def compute_intersections(segments):
             line = perpedicular_line([segment1.a, segment1.b, segment1.c],
                                      segment1.end_points[1])
             perp_intersect = segment2.line_intersect(line)
-            perp_intersect_dist = min_dist_segments_point(segment1.end_points,
-                                                          segment2.end_points,
-                                                          perp_intersect)
+            if any(perp_intersect):
+                perp_intersect_dist = min_dist_segments_point(
+                    segment1.end_points,
+                    segment2.end_points,
+                    perp_intersect
+                )
 
-            if intersect_dist > perp_intersect_dist:
-                intersections.append(segment1.end_points[1])
-                intersections.append(perp_intersect)
+                if intersect_dist > perp_intersect_dist:
+                    intersections.append(segment1.end_points[1])
+                    intersections.append(perp_intersect)
+                else:
+                    intersections.append(intersect)
             else:
                 intersections.append(intersect)
         else:
