@@ -234,39 +234,23 @@ class BoundarySegment(object):
         self.dist_points_line()
         self.side_points_line()
 
-        outside_points = np.where(self.sides == -1)[0]
+        if order == 'ccw':
+            outside_points = np.where(self.sides == -1)[0]
+        elif order == 'cw':
+            outside_points = np.where(self.sides == 1)[0]
+        else:
+            raise ValueError('Invalid value for order.'
+                             'Must be either \'cw\' or \'ccw\'.')
+
         if len(outside_points) == 0:
             return
 
-        furthest_point = np.argmax(self.distances[outside_points])
-        furthest_point = outside_points[furthest_point]
-        d = self.distances[furthest_point]
-
-        if self.orientation < math.pi/2 and self.orientation > 0:
-            angle = self.orientation
-        elif self.orientation > math.pi/2:
-            angle = math.pi - self.orientation
-        elif self.orientation < 0 and self.orientation > -math.pi/2:
-            angle = -self.orientation
-        else:
-            angle = self.orientation + math.pi
-
-        dy = d / math.cos(-angle)
-
-        side = (self.slope() * self.points[furthest_point, 0] -
-                self.points[furthest_point, 1] + self.intercept())
-
-        if side < 0:
-            if order == 'cw':
-                self.c = -(self.intercept() - dy) * self.b
-            elif order == 'ccw':
-                self.c = -(self.intercept() + dy) * self.b
-        else:
-            if order == 'cw':
-                self.c = -(self.intercept() + dy) * self.b
-            elif order == 'ccw':
-                self.c = -(self.intercept() - dy) * self.b
-
+        furthest_outside_point_idx = np.argmax(self.distances[outside_points])
+        furthest_point_idx = outside_points[furthest_outside_point_idx]
+        furthest_point = self.points[furthest_point_idx]
+        point_on_line = self._point_on_line(furthest_point)
+        dx, dy = furthest_point - point_on_line
+        self.c = self.c - self.a * dx - self.b * dy
         self._create_line_segment()
 
     def target_orientation(self, primary_orientations):
