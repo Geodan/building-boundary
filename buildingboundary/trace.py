@@ -11,6 +11,9 @@ import concave_hull
 
 from .components.alphashape import compute_alpha_shape
 from .components.boundingbox import compute_bounding_box
+from .components.segment import BoundarySegment
+from .components.segmentation import convex_fit, extract_segments_ransac
+from .components.merge import merge_segments, flatten_merge_history
 from .components.intersect import compute_intersections
 from .components.regularize import (get_primary_orientations,
                                     regularize_and_merge)
@@ -20,7 +23,7 @@ from .utils.angle import perpendicular
 
 def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
                    min_area=0, max_rectangularity=0.97,
-                   num_points=float('inf'),
+                   segmentation_method='ransac', num_points=float('inf'),
                    primary_orientations=None, inflate=False):
     """
     Trace the boundary of a set of 2D points.
@@ -75,14 +78,20 @@ def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
     rectangularity = shape.area / bounding_box.area
     if rectangularity > max_rectangularity:
         return np.array(bounding_box.exterior.coords)
+
+    if segmentation_method == 'convex_fit':
     boundary_segments = []
     convex_fit(boundary_points, boundary_segments, max_error=max_error)
-    # original_segments = boundary_segments.copy()
+    elif segmentation_method == 'ransac':
+        segments = extract_segments_ransac(boundary_points, 2, max_error)
+        boundary_segments = [BoundarySegment(s) for s in segments]
+        for s in boundary_segments:
+            s.fit_line(method='TLS')
 
-    boundary_segments, merge_history = merge_segments(boundary_segments,
+    original_segments = boundary_segments.copy()
+
+    boundary_segments, merge_history_1 = merge_segments(boundary_segments,
                                                       merge_angle)
-
-    # boundary_segments, removed_segments = remove_small_corners(boundary_segments)
 
     if len(boundary_segments) in [0, 1, 2]:
         return []

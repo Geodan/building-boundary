@@ -12,7 +12,7 @@ import numpy as np
 from ..utils.angle import (min_angle_difference, weighted_angle_mean,
                            to_positive_angle, perpendicular)
 from ..utils.error import ThresholdError
-from .segmentation import merge_segments
+from .merge import merge_segments
 
 
 def get_primary_segments(segments, num_points=sys.maxsize):

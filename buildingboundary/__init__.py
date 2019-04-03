@@ -6,4 +6,5 @@ from .components import segmentation
 from .components import assess
 from .components import alphashape
 from .components import boundingbox
+from .components import merge
 from .utils import angle
