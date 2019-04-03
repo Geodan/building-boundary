@@ -31,8 +31,7 @@ def check_error(segments, max_error):
     return invalid_segments
 
 
-def restore(segments, original_segments, invalid_segments,
-            merged_segments, removed_segments):
+def restore(segments, original_segments, invalid_segments, merged_segments):
     """
     Replaces invalid segments with earlier segments.
 
@@ -57,8 +56,6 @@ def restore(segments, original_segments, invalid_segments,
         The segments with the original segments restored in place of the
         invalid segments.
     """
-    merged_segments = [s for i, s in enumerate(merged_segments) if
-                       i not in removed_segments]
     offset = 0
     for invalid in invalid_segments:
         restore_segments = [original_segments[i] for

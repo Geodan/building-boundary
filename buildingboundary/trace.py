@@ -62,7 +62,7 @@ def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
         The vertices of the computed boundary line
     """
     if k is not None:
-    boundary_points = concave_hull.compute(points, k, True)
+        boundary_points = concave_hull.compute(points, k, True)
         shape = Polygon(boundary_points)
     elif alpha is not None:
         shape = compute_alpha_shape(points, 0.5)
@@ -80,8 +80,8 @@ def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
         return np.array(bounding_box.exterior.coords)
 
     if segmentation_method == 'convex_fit':
-    boundary_segments = []
-    convex_fit(boundary_points, boundary_segments, max_error=max_error)
+        boundary_segments = []
+        convex_fit(boundary_points, boundary_segments, max_error=max_error)
     elif segmentation_method == 'ransac':
         segments = extract_segments_ransac(boundary_points, 2, max_error)
         boundary_segments = [BoundarySegment(s) for s in segments]
@@ -91,7 +91,7 @@ def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
     original_segments = boundary_segments.copy()
 
     boundary_segments, merge_history_1 = merge_segments(boundary_segments,
-                                                      merge_angle)
+                                                        merge_angle)
 
     if len(boundary_segments) in [0, 1, 2]:
         return []
@@ -105,12 +105,16 @@ def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
     elif len(primary_orientations) == 1:
         primary_orientations.append(perpendicular(primary_orientations[0]))
 
-    boundary_segments = regularize_and_merge(boundary_segments, primary_orientations,
-                                             merge_angle, max_error)
+    boundary_segments, merge_history_2 = regularize_and_merge(boundary_segments,
+                                                              primary_orientations,
+                                                              merge_angle,
+                                                              max_error)
 
-    # invalid_segments = check_error(boundary_segments, max_error*1.5)
-    # boundary_segments = restore(boundary_segments, original_segments, invalid_segments,
-    #                             merged_segments, removed_segments)
+    merge_history = merge_history_1 + merge_history_2
+    merged_segments = flatten_merge_history(merge_history)
+    invalid_segments = check_error(boundary_segments, max_error)
+    boundary_segments = restore(boundary_segments, original_segments,
+                                invalid_segments, merged_segments)
 
     if inflate:
         for s in boundary_segments:
