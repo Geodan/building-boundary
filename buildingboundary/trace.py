@@ -70,7 +70,8 @@ def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
     else:
         raise ValueError('Either k or alpha needs to be set.')
 
-    bounding_box = compute_bounding_box(boundary_points)
+    bounding_box = compute_bounding_box(boundary_points,
+                                        given_angles=primary_orientations)
 
     if shape.area < min_area:
         return bounding_box
