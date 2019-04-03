@@ -4,10 +4,12 @@
 @author: Chris Lucas
 """
 
+import numpy as np
+from shapely.geometry import Polygon
+
 import concave_hull
 
-from .components.segmentation import (convex_fit, merge_segments,
-                                      remove_small_corners)
+from .components.alphashape import compute_alpha_shape
 from .components.intersect import compute_intersections
 from .components.regularize import (get_primary_orientations,
                                     regularize_and_merge)
@@ -15,7 +17,8 @@ from .components.assess import check_error, restore
 from .utils.angle import perpendicular
 
 
-def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
+def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
+                   num_points=float('inf'),
                    primary_orientations=None, inflate=False):
     """
     Trace the boundary of a set of 2D points.
@@ -53,7 +56,14 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
     : (Mx2) array
         The vertices of the computed boundary line
     """
+    if k is not None:
     boundary_points = concave_hull.compute(points, k, True)
+        shape = Polygon(boundary_points)
+    elif alpha is not None:
+        shape = compute_alpha_shape(points, 0.5)
+        boundary_points = np.array(shape.exterior.coords)
+    else:
+        raise ValueError('Either k or alpha needs to be set.')
 
     boundary_segments = []
     convex_fit(boundary_points, boundary_segments, max_error=max_error)
