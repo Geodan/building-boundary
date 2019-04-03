@@ -307,18 +307,6 @@ class BoundarySegment(object):
 
             self._create_line_segment()
 
-    def change_intercept(self, intercept):
-        """
-        Moves the line segment based on a new y-intercept.
-
-        Parameters
-        ----------
-        intercept : float or int
-            The new y-intercept.
-        """
-        self.intercept = intercept
-        self._create_line_segment()
-
     def line_intersect(self, line):
         """
         Compute the intersection between this line and another.

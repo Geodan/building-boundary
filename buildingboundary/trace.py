@@ -12,12 +12,11 @@ from .components.intersect import compute_intersections
 from .components.regularize import (get_primary_orientations,
                                     regularize_and_merge)
 from .components.assess import check_error, restore
-from .components.align import align_by_intercept
 from .utils.angle import perpendicular
 
 
 def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
-                   max_intersect_distance=float('inf'), alignment=0,
+                   max_intersect_distance=float('inf'),
                    primary_orientations=None, inflate=False):
     """
     Trace the boundary of a set of 2D points.
@@ -84,9 +83,6 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
     # invalid_segments = check_error(boundary_segments, max_error*1.5)
     # boundary_segments = restore(boundary_segments, original_segments, invalid_segments,
     #                             merged_segments, removed_segments)
-
-    if alignment != 0:
-        align_by_intercept(boundary_segments, alignment)
 
     if inflate:
         for s in boundary_segments:
