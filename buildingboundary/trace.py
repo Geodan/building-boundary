@@ -10,6 +10,7 @@ from shapely.geometry import Polygon
 import concave_hull
 
 from .components.alphashape import compute_alpha_shape
+from .components.boundingbox import compute_bounding_box
 from .components.intersect import compute_intersections
 from .components.regularize import (get_primary_orientations,
                                     regularize_and_merge)
@@ -18,6 +19,7 @@ from .utils.angle import perpendicular
 
 
 def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
+                   min_area=0, max_rectangularity=0.97,
                    num_points=float('inf'),
                    primary_orientations=None, inflate=False):
     """
@@ -65,6 +67,14 @@ def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
     else:
         raise ValueError('Either k or alpha needs to be set.')
 
+    bounding_box = compute_bounding_box(boundary_points)
+
+    if shape.area < min_area:
+        return bounding_box
+
+    rectangularity = shape.area / bounding_box.area
+    if rectangularity > max_rectangularity:
+        return np.array(bounding_box.exterior.coords)
     boundary_segments = []
     convex_fit(boundary_points, boundary_segments, max_error=max_error)
     # original_segments = boundary_segments.copy()
