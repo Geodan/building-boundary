@@ -55,6 +55,12 @@ class BoundarySegment(object):
         """
         self.points = points
 
+    def slope(self):
+        return -self.a / self.b
+
+    def intercept(self):
+        return -self.c / self.b
+
     def fit_line(self, method='TLS', max_error=None):
         """
         Fit a line to the set of points of the object.
@@ -90,19 +96,23 @@ class BoundarySegment(object):
         elif len(self.points) == 2:
             dx, dy = np.diff(self.points, axis=0)[0]
             if dx == 0:
-                dx = 0.00000001
-            self.slope = dy / dx
-            self.intercept = (np.mean(self.points[:, 1]) -
-                              np.mean(self.points[:, 0]) * self.slope)
+                self.a = 0
+            else:
+                self.a = dy / dx
+            self.b = -1
+            self.c = (np.mean(self.points[:, 1]) -
+                      np.mean(self.points[:, 0]) * self.a)
         else:
             if method == 'OLS':
-                self.slope, self.intercept = np.polyfit(self.points[:, 0],
-                                                        self.points[:, 1], 1)
+                self.a, self.c = np.polyfit(self.points[:, 0],
+                                            self.points[:, 1], 1)
+                self.b = -1
             elif method == 'TLS':
                 _, eigenvectors = PCA(self.points)
-                self.slope = eigenvectors[1, 0] / eigenvectors[0, 0]
-                self.intercept = (np.mean(self.points[:, 1]) -
-                                  np.mean(self.points[:, 0]) * self.slope)
+                self.a = eigenvectors[1, 0] / eigenvectors[0, 0]
+                self.b = -1
+                self.c = (np.mean(self.points[:, 1]) -
+                          np.mean(self.points[:, 0]) * self.a)
             else:
                 raise NotImplementedError("Chosen method not available.")
 
@@ -129,15 +139,17 @@ class BoundarySegment(object):
             The X and Y coordinates of the closest point to the given
             point on the fitted line.
 
-        .. [1] https://math.stackexchange.com/questions/717746/closest-point-on-a-line-to-another-point
+        .. [1] https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_an_equation
         """
-        if self.slope == 0:
-            return [point[0], self.intercept]
-        perp_slope = 1 / (-1 * self.slope)
-        perp_intercept = point[1] - (point[0] * perp_slope)
-        a = np.array([[self.slope, -1], [perp_slope, -1]])
-        b = np.array([-self.intercept, -perp_intercept])
-        return np.linalg.solve(a, b)
+        if self.a == 0 and self.b == 0:
+            raise ValueError('Invalid line. Line coefficients a and b '
+                             '(ax + by + c = 0) cannot both be zero.')
+
+        x = (self.b * (self.b * point[0] - self.a * point[1]) -
+             self.a * self.c) / (self.a**2 + self.b**2)
+        y = (self.a * (-self.b * point[0] + self.a * point[1]) -
+             self.b * self.c) / (self.a**2 + self.b**2)
+        return [x, y]
 
     def _create_line_segment(self):
         """
@@ -193,10 +205,9 @@ class BoundarySegment(object):
 
         .. [1] https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
         """
-        #
-        self.distances = (abs(self.slope * self.points[:, 0] +
-                              -self.points[:, 1] + self.intercept) /
-                          math.sqrt(self.slope ** 2 + 1))
+        self.distances = (abs(self.a * self.points[:, 0] +
+                              self.b * self.points[:, 1] + self.c) /
+                          math.sqrt(self.a**2 + self.b**2))
 
     def side_points_line(self):
         """
@@ -216,7 +227,7 @@ class BoundarySegment(object):
                  (self.points[:, 0] - self.end_points[0, 0]))
         self.sides = np.sign(sides)
 
-    def inflate(self):
+    def inflate(self, order='ccw'):
         """
         Moves the line segments to the outer most point of the object.
         """
@@ -242,13 +253,19 @@ class BoundarySegment(object):
 
         dy = d / math.cos(-angle)
 
-        side = (self.slope * self.points[furthest_point, 0] -
-                self.points[furthest_point, 1] + self.intercept)
+        side = (self.slope() * self.points[furthest_point, 0] -
+                self.points[furthest_point, 1] + self.intercept())
 
         if side < 0:
-            self.intercept += dy
+            if order == 'cw':
+                self.c = -(self.intercept() - dy) * self.b
+            elif order == 'ccw':
+                self.c = -(self.intercept() + dy) * self.b
         else:
-            self.intercept -= dy
+            if order == 'cw':
+                self.c = -(self.intercept() + dy) * self.b
+            elif order == 'ccw':
+                self.c = -(self.intercept() - dy) * self.b
 
         self._create_line_segment()
 
@@ -294,10 +311,10 @@ class BoundarySegment(object):
         .. [1] https://math.stackexchange.com/questions/1377716/how-to-find-a-least-squares-line-with-a-known-slope
         """
         if not np.isclose(slope, math.tan(self.orientation)):
-            self.slope = slope
-            self.intercept = (sum(self.points[:, 1] -
-                                  self.slope * self.points[:, 0]) /
-                              len(self.points))
+            self.a = slope
+            self.b = -1
+            self.c = (sum(self.points[:, 1] - self.a * self.points[:, 0]) /
+                      len(self.points))
 
             if max_error is not None:
                 residuals = self.residuals()
@@ -313,8 +330,8 @@ class BoundarySegment(object):
 
         Parameters
         ----------
-        line : (1x2) array
-            The slope and intersect of a line.
+        line : (1x3) array-like
+            The a,b, and c coefficients (ax + by + c = 0) of a line.
 
         Returns
         -------
@@ -322,12 +339,11 @@ class BoundarySegment(object):
             The coordinates of intersection. Returns empty array if no
             intersection found.
         """
-        line_self = np.array([self.slope, -1, -self.intercept])
-        line_other = np.array([line[0], -1, -line[1]])
-        d = line_self[0] * line_other[1] - line_self[1] * line_other[0]
-        dx = line_self[2] * line_other[1] - line_self[1] * line_other[2]
-        dy = line_self[0] * line_other[2] - line_self[2] * line_other[0]
+        a, b, c = line
+        d = self.a * b - self.b * a
         if d != 0:
+            dx = -self.c * b + self.b * c
+            dy = self.c * a - self.a * c
             x = dx / float(d)
             y = dy / float(d)
             return np.array([x, y])
