@@ -124,7 +124,11 @@ def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
 
     if inflate:
         for s in boundary_segments:
-            s.inflate()
+            if segmentation_method == 'ransac':
+                s.inflate(order='cw')
+            else:
+                s.inflate(order='ccw')
+
 
     vertices = compute_intersections(boundary_segments)
 
