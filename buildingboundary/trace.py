@@ -67,8 +67,12 @@ def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
         boundary_points = concave_hull.compute(points, k, True)
         shape = Polygon(boundary_points)
     elif alpha is not None:
-        shape = compute_alpha_shape(points, 0.5)
-        boundary_points = np.array(shape.exterior.coords)
+        shape = compute_alpha_shape(points, alpha)
+        if type(shape) == Polygon:
+            boundary_points = np.array(shape.exterior.coords)
+        else:
+            largest_polygon = max(shape, key=lambda s: s.area)
+            boundary_points = np.array(largest_polygon.exterior.coords)
     else:
         raise ValueError('Either k or alpha needs to be set.')
 
