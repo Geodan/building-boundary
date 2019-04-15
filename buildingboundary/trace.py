@@ -115,11 +115,12 @@ def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
                                                               max_error,
                                                               max_merge_distance)
 
-    merge_history = merge_history_1 + merge_history_2
-    merged_segments = flatten_merge_history(merge_history)
     invalid_segments = check_error(boundary_segments, max_error)
-    boundary_segments = restore(boundary_segments, original_segments,
-                                invalid_segments, merged_segments)
+    if len(invalid_segments) > 0:
+        merge_history = merge_history_1 + merge_history_2
+        merged_segments = flatten_merge_history(merge_history)
+        boundary_segments = restore(boundary_segments, original_segments,
+                                    invalid_segments, merged_segments)
 
     if inflate:
         for s in boundary_segments:
