@@ -121,15 +121,16 @@ def extract_segments_ransac(points, min_size=2, distance=0.3, iterations=1000):
     segments : list of array
         The linear segments.
     """
-    shift = np.min(points, axis=0)
-    points -= shift
+    points_shifted = points.copy()
+    shift = np.min(points_shifted, axis=0)
+    points_shifted -= shift
 
     segments = []
-    mask = np.ones(len(points), dtype=np.bool)
-    indices = np.arange(len(points))
+    mask = np.ones(len(points_shifted), dtype=np.bool)
+    indices = np.arange(len(points_shifted))
 
     while True:
-        current_points = points[mask]
+        current_points = points_shifted[mask]
         assert len(indices) == len(current_points)
 
         inliers = ransac_line_segmentation(current_points, distance)
@@ -148,7 +149,7 @@ def extract_segments_ransac(points, min_size=2, distance=0.3, iterations=1000):
 
         mask[longest_seq[0]:longest_seq[-1]+1] = False
 
-        if len(points[mask]) < min_size:
+        if len(points_shifted[mask]) < min_size:
             break
 
         if np.all(mask) is False:
@@ -156,6 +157,6 @@ def extract_segments_ransac(points, min_size=2, distance=0.3, iterations=1000):
 
         indices = np.array([i for i in indices if i not in longest_seq])
 
-    segments = [points[i] for i in segments]
+    segments = [points_shifted[i]+shift for i in segments]
 
     return segments
