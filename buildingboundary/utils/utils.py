@@ -28,4 +28,4 @@ def create_segments(iterable):
     >>> list(create_segments([3, 5, 1, 9, 8]))
     [(3, 5), (5, 1), (1, 9), (9, 8), (8, 3)]
     """
-    return zip(iterable, np.roll(iterable, -1))
+    return zip(iterable, np.roll(iterable, -1, axis=0))
