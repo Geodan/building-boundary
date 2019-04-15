@@ -23,7 +23,9 @@ from .utils.angle import perpendicular
 
 def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
                    min_area=0, max_rectangularity=0.97,
-                   segmentation_method='ransac', num_points=float('inf'),
+                   segmentation_method='ransac',
+                   max_merge_distance=float('inf'),
+                   num_points=float('inf'),
                    primary_orientations=None, inflate=False):
     """
     Trace the boundary of a set of 2D points.
@@ -92,7 +94,8 @@ def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
     original_segments = boundary_segments.copy()
 
     boundary_segments, merge_history_1 = merge_segments(boundary_segments,
-                                                        merge_angle)
+                                                        merge_angle,
+                                                        max_merge_distance)
 
     if len(boundary_segments) in [0, 1, 2]:
         return []
@@ -109,7 +112,8 @@ def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
     boundary_segments, merge_history_2 = regularize_and_merge(boundary_segments,
                                                               primary_orientations,
                                                               merge_angle,
-                                                              max_error)
+                                                              max_error,
+                                                              max_merge_distance)
 
     merge_history = merge_history_1 + merge_history_2
     merged_segments = flatten_merge_history(merge_history)

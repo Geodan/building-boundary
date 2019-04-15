@@ -257,7 +257,8 @@ def regularize_segments(segments, primary_orientations, max_error=None):
 
 
 def regularize_and_merge(segments, primary_orientations,
-                         merge_angle, max_error=None):
+                         merge_angle, max_error=None,
+                         max_merge_distance=float('inf')):
     """
     Keeps regularizing and merging the segments until no changes
     happen.
@@ -291,10 +292,13 @@ def regularize_and_merge(segments, primary_orientations,
     while num_segments != prev_num_segments:
         prev_num_segments = len(segments)
 
-        segments = regularize_segments(segments, primary_orientations,
+        segments = regularize_segments(segments,
+                                       primary_orientations,
                                        max_error=max_error)
 
-        segments, merge_history_part = merge_segments(segments, merge_angle)
+        segments, merge_history_part = merge_segments(segments,
+                                                      merge_angle,
+                                                      max_merge_distance)
         merge_history.extend(merge_history_part)
 
         num_segments = len(segments)

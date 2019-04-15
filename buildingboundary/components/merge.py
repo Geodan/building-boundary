@@ -5,11 +5,12 @@
 """
 
 import math
+from bisect import insort_left
 
 import numpy as np
 
 from ..utils.angle import angle_difference
-from ..utils.utils import create_segments
+from ..utils.utils import create_segments, distance
 from .segment import BoundarySegment
 
 
@@ -88,7 +89,19 @@ def get_merged_segments(pivot_segment, n_segments):
     return merged_segments
 
 
-def merge_segments(segments, merge_angle):
+def check_distance(segments, pivots, max_distance):
+    distances = np.array([distance(pair[0].end_points[1],
+                                   pair[1].end_points[0])
+                         for pair in create_segments(segments)])
+    too_far = np.where(distances > max_distance)[0] + 1
+    too_far[-1] = 0 if too_far[-1] > len(segments) - 1 else too_far[-1]
+    for x in too_far:
+        insort_left(pivots, x)
+    pivots = list(set(pivots))
+    return pivots
+
+
+def merge_segments(segments, merge_angle, max_distance=float('inf')):
     """
     Merges segments which are within a given angle of each
     other.
@@ -121,6 +134,8 @@ def merge_segments(segments, merge_angle):
 
         orientations = np.array([s.orientation for s in prev_segments])
         pivots = find_pivots(orientations, merge_angle)
+        if max_distance != float('inf'):
+            pivots = check_distance(prev_segments, pivots, max_distance)
 
         for pivot_segment in create_segments(pivots):
             points = get_points_between_pivots(prev_segments, pivot_segment)
