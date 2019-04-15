@@ -27,68 +27,6 @@ def distance(p1, p2):
     return math.hypot(*(p1-p2))
 
 
-def distance_point_segment(point, segment):
-    """
-    The euclidean distance between between a point and
-    a line segment.
-
-    ref: http://geomalgorithms.com/a02-_lines.html
-
-    Parameters
-    ----------
-    point : list or array
-        A point in 2D space.
-    segment : list or array
-        A line segment defined by two points.
-
-    Returns
-    -------
-    distance : float
-        The euclidean distance between the point and
-        the line segment.
-    """
-    #
-    v = segment[1] - segment[0]
-    w = point - segment[0]
-
-    c1 = np.dot(w, v)
-    if c1 <= 0:
-        return distance(point, segment[0])
-
-    c2 = np.dot(v, v)
-    if c2 <= c1:
-        return distance(point, segment[1])
-
-    b = c1 / c2
-    pb = segment[0] + b * v
-    return distance(point, pb)
-
-
-def min_dist_segments_point(segment1, segment2, point):
-    """
-    The minimum euclidean distance between a point and
-    two line segments.
-
-    Parameters
-    ----------
-    segment1 : list or array
-        A line segment defined by two points.
-    segment2 : list or array
-        A line segment defined by two points.
-    point : list or array
-        A point in 2D space.
-
-    Returns
-    -------
-    distance : float
-        The minimum euclidean distance between the point and
-        the two line segments.
-    """
-    distance1 = distance_point_segment(point, segment1)
-    distance2 = distance_point_segment(point, segment2)
-    return min([distance1, distance2])
-
-
 def perpedicular_line(line, p):
     """
     Returns a perpendicular line to a line at a point.
@@ -113,7 +51,7 @@ def perpedicular_line(line, p):
     return [pa, pb, pc]
 
 
-def compute_intersections(segments):
+def compute_intersections(segments, distance_weight=3):
     """
     Computes the intersections between the segments in sequence. If
     no intersection could be found or the perpendicular line results in
@@ -144,21 +82,19 @@ def compute_intersections(segments):
                                              segment2.c])
 
         if any(intersect):
-            intersect_dist = min_dist_segments_point(segment1.end_points,
-                                                     segment2.end_points,
-                                                     intersect)
+            intersect_dist = min(distance(segment1.end_points[1], intersect),
+                                 distance(segment2.end_points[0], intersect))
 
             line = perpedicular_line([segment1.a, segment1.b, segment1.c],
                                      segment1.end_points[1])
             perp_intersect = segment2.line_intersect(line)
             if any(perp_intersect):
-                perp_intersect_dist = min_dist_segments_point(
-                    segment1.end_points,
-                    segment2.end_points,
-                    perp_intersect
-                )
+                perp_intersect_dist = min(distance(segment1.end_points[1],
+                                                   perp_intersect),
+                                          distance(segment2.end_points[0],
+                                                   perp_intersect))
 
-                if intersect_dist > perp_intersect_dist:
+                if intersect_dist > perp_intersect_dist * distance_weight:
                     intersections.append(segment1.end_points[1])
                     intersections.append(perp_intersect)
                 else:
