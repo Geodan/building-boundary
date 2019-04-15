@@ -9,8 +9,8 @@ import math
 
 import numpy as np
 
-from ..utils.angle import (min_angle_difference, weighted_angle_mean,
-                           to_positive_angle, perpendicular)
+from ..utils.angle import (min_angle_difference, to_positive_angle,
+                           perpendicular)
 from ..utils.error import ThresholdError
 from .merge import merge_segments
 
@@ -75,7 +75,7 @@ def sort_orientations(orientations):
 
     """
     unsorted_orientations = [o['orientation'] for o in orientations]
-    lengths = [o['length'] for o in orientations]
+    lengths = [o['size'] for o in orientations]
     sort = np.argsort(lengths)
     sorted_orientations = np.array(unsorted_orientations)[sort].tolist()
     return sorted_orientations
@@ -107,17 +107,13 @@ def compute_primary_orientations(primary_segments, angle_epsilon=0.1):
             a2 = o['orientation']
             angle_diff = min_angle_difference(a1, a2)
             if angle_diff < angle_epsilon:
-                sum_length = s.length + o['length']
-                mean = weighted_angle_mean([to_positive_angle(a1),
-                                            to_positive_angle(a2)],
-                                           [s.length/sum_length,
-                                            o['length']/sum_length])
-                o['length'] += s.length
-                o['orientation'] = mean
+                if len(s.points) > o['size']:
+                    o['size'] = len(s.points)
+                    o['orientation'] = a1
                 break
         else:
             orientations.append({'orientation': a1,
-                                 'length': s.length})
+                                 'size': len(s.points)})
 
     primary_orientations = sort_orientations(orientations)
 

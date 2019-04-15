@@ -72,32 +72,6 @@ def to_positive_angle(angle):
     return angle
 
 
-def weighted_angle_mean(angles, weights):
-    """
-    Takes the weighted mean of a set of angles.
-
-    Parameters
-    ----------
-    angles : list
-        The angles to average in radians
-    weights : list
-        The corrisponding weights
-
-    Returns
-    -------
-    mean : float
-        The weighted mean of the angles in radians
-    """
-    x = 0
-    y = 0
-    for angle, weight in zip(angles, weights):
-        x += math.cos(angle) * weight
-        y += math.sin(angle) * weight
-
-    mean = math.atan2(y, x)
-    return mean
-
-
 def perpendicular(angle):
     """
     Returns the perpendicular angle to the given angle.
