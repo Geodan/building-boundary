@@ -101,6 +101,12 @@ def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
                                                         merge_angle,
                                                         max_merge_distance)
 
+    invalid_segments = check_error(boundary_segments, max_error)
+    if len(invalid_segments) > 0:
+        merged_segments = flatten_merge_history(merge_history_1)
+        boundary_segments = restore(boundary_segments, original_segments,
+                                    invalid_segments, merged_segments)
+
     if len(boundary_segments) in [0, 1, 2]:
         return []
     elif len(boundary_segments) == 3:
