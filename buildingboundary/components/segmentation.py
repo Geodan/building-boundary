@@ -6,51 +6,11 @@
 
 import numpy as np
 import pcl
-from scipy.spatial import ConvexHull
 
-from ..utils.error import ThresholdError
-from ..utils.utils import create_segments
 from .segment import BoundarySegment
 
 
-def convex_fit(points, boundary_segments, max_error):
-    """
-    Recursive function which segments a set of points into
-    linear segments.
-
-    Parameters
-    ----------
-    points : (Mx2) array
-        The coordinates of the points
-    boundary_segments : list of BoundarySegment
-        The accepted boundary segments. Initiate using a variable
-        containing an empty list.
-    max_error : float or int
-        The maximum error (average distance points to line) the
-        fitted line is allowed to have.
-    """
-    hull = ConvexHull(points)
-    hull.vertices.sort()
-    segments = create_segments(hull.vertices)
-
-    for s in segments:
-        if s[1]+1 == len(hull.points) or s[1] == 0:
-            s_points = hull.points[s[0]:]
-        else:
-            s_points = hull.points[s[0]:s[1]+1]
-
-        if len(s_points) == 1:
-            continue
-
-        try:
-            segment = BoundarySegment(s_points)
-            segment.fit_line(method='TLS', max_error=max_error)
-            boundary_segments.append(segment)
-        except ThresholdError:
-            convex_fit(s_points, boundary_segments, max_error=max_error)
-
-
-def ransac_line_segmentation(points, distance, iterations=1000):
+def ransac_line_segmentation(points, distance):
     """
     Fit a line using RANSAC.
 
@@ -61,8 +21,6 @@ def ransac_line_segmentation(points, distance, iterations=1000):
     distance : float
         The maximum distance between a point and a line for a point to be
         considered belonging to that line.
-    iterations : int, optional
-        The number of iterations within the RANSAC algorithm.
 
     Returns
     -------
@@ -76,10 +34,41 @@ def ransac_line_segmentation(points, distance, iterations=1000):
     seg.set_model_type(pcl.SACMODEL_LINE)
     seg.set_method_type(pcl.SAC_RANSAC)
     seg.set_distance_threshold(distance)
-    seg.set_max_iterations(iterations)
+    seg.set_max_iterations(1000)
     seg.set_optimize_coefficients(False)
     inliers, _ = seg.segment()
     return inliers
+
+
+def extend_segment(segment, points, indices, distance):
+    line_segment = BoundarySegment(points[segment])
+    line_segment.fit_line(method='TLS')
+
+    for i in range(segment[0]-1, indices[0]-1, -1):
+        if line_segment.dist_point_line(points[i]) < distance:
+            segment.insert(0, i)
+        else:
+            break
+
+    for i in range(segment[-1]+1, indices[-1]+1):
+        if line_segment.dist_point_line(points[i]) < distance:
+            segment.append(i)
+        else:
+            break
+
+    return segment
+
+
+def extract_segment(points, indices, distance):
+    inliers = ransac_line_segmentation(points[indices], distance)
+    inliers = indices[inliers]
+
+    sequences = np.split(inliers, np.where(np.diff(inliers) != 1)[0] + 1)
+    segment = list(max(sequences, key=len))
+
+    segment = extend_segment(segment, points, indices, distance)
+
+    return segment
 
 
 def get_insert_loc(segments, segment):
@@ -99,7 +88,37 @@ def get_insert_loc(segments, segment):
     return lo
 
 
-def extract_segments_ransac(points, min_size=2, distance=0.3, iterations=1000):
+def get_remaining_sequences(indices, mask):
+    sequences = np.split(indices, np.where(np.diff(mask) == 1)[0] + 1)
+
+    if mask[0]:
+        sequences = [s for i, s in enumerate(sequences) if i % 2 == 0]
+    else:
+        sequences = [s for i, s in enumerate(sequences) if i % 2 != 0]
+
+    sequences = [s for s in sequences if len(s) > 1]
+
+    return sequences
+
+
+def extract_segments(segments, points, indices, mask, distance):
+    if len(indices) == 2:
+        segment = indices
+    else:
+        segment = extract_segment(points, indices, distance)
+
+    insert_loc = get_insert_loc(segments, segment)
+    segments.insert(insert_loc, segment)
+
+    mask[segment[0]:segment[-1]+1] = False
+
+    sequences = get_remaining_sequences(indices, mask[indices])
+
+    for s in sequences:
+        extract_segments(segments, points, s, mask, distance)
+
+
+def boundary_segmentation(points, distance):
     """
     Extract linear segments using RANSAC.
 
@@ -107,14 +126,9 @@ def extract_segments_ransac(points, min_size=2, distance=0.3, iterations=1000):
     ----------
     points : (Mx2) array
         The coordinates of the points.
-    min_size : int
-        The minimum size a segment needs to be to be considered a relevant
-        segment/line.
     distance : float
         The maximum distance between a point and a line for a point to be
         considered belonging to that line.
-    iterations : int
-        The number of iterations within the RANSAC algorithm.
 
     Returns
     -------
@@ -125,37 +139,11 @@ def extract_segments_ransac(points, min_size=2, distance=0.3, iterations=1000):
     shift = np.min(points_shifted, axis=0)
     points_shifted -= shift
 
-    segments = []
     mask = np.ones(len(points_shifted), dtype=np.bool)
     indices = np.arange(len(points_shifted))
 
-    while True:
-        current_points = points_shifted[mask]
-        assert len(indices) == len(current_points)
-
-        inliers = ransac_line_segmentation(current_points, distance)
-        inliers = indices[inliers]
-
-        sequences = np.split(inliers, np.where(np.diff(inliers) != 1)[0] + 1)
-        longest_seq = max(sequences, key=len)
-
-        segment = list(range(longest_seq[0], longest_seq[-1]+1))
-
-        if len(segment) < min_size:
-            break
-
-        insert_loc = get_insert_loc(segments, segment)
-        segments.insert(insert_loc, segment)
-
-        mask[longest_seq[0]:longest_seq[-1]+1] = False
-
-        if len(points_shifted[mask]) < min_size:
-            break
-
-        if np.all(mask) is False:
-            break
-
-        indices = np.array([i for i in indices if i not in longest_seq])
+    segments = []
+    extract_segments(segments, points_shifted, indices, mask, distance)
 
     segments = [points_shifted[i]+shift for i in segments]
 

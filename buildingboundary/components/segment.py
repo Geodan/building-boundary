@@ -209,6 +209,22 @@ class BoundarySegment(object):
                               self.b * self.points[:, 1] + self.c) /
                           math.sqrt(self.a**2 + self.b**2))
 
+    def dist_point_line(self, point):
+        """
+        Computes the distance from the given point to the fitted line.
+
+        Parameters
+        ----------
+
+        Returns
+        -------
+
+        .. [1] https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+        """
+        distance = (abs(self.a * point[0] + self.b * point[1] + self.c) /
+                    math.sqrt(self.a**2 + self.b**2))
+        return distance
+
     def side_points_line(self):
         """
         Determines on which side the points lie from the line segment.

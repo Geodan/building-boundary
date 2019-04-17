@@ -12,7 +12,7 @@ import concave_hull
 from .components.alphashape import compute_alpha_shape
 from .components.boundingbox import compute_bounding_box
 from .components.segment import BoundarySegment
-from .components.segmentation import convex_fit, extract_segments_ransac
+from .components.segmentation import boundary_segmentation
 from .components.merge import merge_segments, flatten_merge_history
 from .components.intersect import compute_intersections
 from .components.regularize import (get_primary_orientations,
@@ -23,7 +23,6 @@ from .utils.angle import perpendicular
 
 def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
                    min_area=0, max_rectangularity=0.97,
-                   segmentation_method='ransac',
                    max_merge_distance=float('inf'),
                    num_points=float('inf'),
                    primary_orientations=None, inflate=False):
@@ -86,11 +85,7 @@ def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
     if rectangularity > max_rectangularity:
         return np.array(bounding_box.exterior.coords)
 
-    if segmentation_method == 'convex_fit':
-        boundary_segments = []
-        convex_fit(boundary_points, boundary_segments, max_error=max_error)
-    elif segmentation_method == 'ransac':
-        segments = extract_segments_ransac(boundary_points, 2, max_error)
+    segments = boundary_segmentation(boundary_points, max_error)
         boundary_segments = [BoundarySegment(s) for s in segments]
         for s in boundary_segments:
             s.fit_line(method='TLS')
@@ -134,10 +129,7 @@ def trace_boundary(points, max_error, merge_angle, k=None, alpha=None,
 
     if inflate:
         for s in boundary_segments:
-            if segmentation_method == 'ransac':
                 s.inflate(order='cw')
-            else:
-                s.inflate(order='ccw')
 
 
     vertices = compute_intersections(boundary_segments)
