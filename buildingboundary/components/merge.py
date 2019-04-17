@@ -94,10 +94,11 @@ def check_distance(segments, pivots, max_distance):
                                    pair[1].end_points[0])
                          for pair in create_segments(segments)])
     too_far = np.where(distances > max_distance)[0] + 1
-    too_far[-1] = 0 if too_far[-1] > len(segments) - 1 else too_far[-1]
-    for x in too_far:
-        insort_left(pivots, x)
-    pivots = list(set(pivots))
+    if len(too_far) > 0:
+        too_far[-1] = 0 if too_far[-1] > len(segments) - 1 else too_far[-1]
+        for x in too_far:
+            insort_left(pivots, x)
+        pivots = list(set(pivots))
     return pivots
 
 
