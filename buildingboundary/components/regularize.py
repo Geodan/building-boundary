@@ -34,7 +34,7 @@ def get_primary_segments(segments, num_points):
         The segments which are supported by at least the given number of
         points.
     """
-    primary_segments = [s for s in segments if len(s.points) > num_points]
+    primary_segments = [s for s in segments if len(s.points) >= num_points]
     return primary_segments
 
 
@@ -54,7 +54,7 @@ def find_main_orientation(segments):
         The orientation of the segment supported by the most points.
         In radians.
     """
-    longest_segment = np.argmin([s.length for s in segments])
+    longest_segment = np.argmax([len(s.points) for s in segments])
     main_orientation = segments[longest_segment].orientation
     return main_orientation
 
