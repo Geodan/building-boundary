@@ -60,6 +60,7 @@ def restore(segments, original_segments, invalid_segments, merged_segments):
     for invalid in invalid_segments:
         restore_segments = [original_segments[i] for
                             i in merged_segments[invalid]]
-        segments[invalid+offset:invalid+offset+1] = restore_segments
-        offset += len(restore_segments)-1
+        if len(restore_segments) > 1:
+            segments[invalid+offset:invalid+offset+1] = restore_segments
+            offset += len(restore_segments)-1
     return segments
