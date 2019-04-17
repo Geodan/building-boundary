@@ -101,7 +101,7 @@ def check_distance(segments, pivots, max_distance):
     return pivots
 
 
-def merge_segments(segments, merge_angle, max_distance=float('inf')):
+def merge_segments(segments, merge_angle, max_distance=None):
     """
     Merges segments which are within a given angle of each
     other.
@@ -134,7 +134,7 @@ def merge_segments(segments, merge_angle, max_distance=float('inf')):
 
         orientations = np.array([s.orientation for s in prev_segments])
         pivots = find_pivots(orientations, merge_angle)
-        if max_distance != float('inf'):
+        if max_distance is not None:
             pivots = check_distance(prev_segments, pivots, max_distance)
 
         for pivot_segment in create_segments(pivots):

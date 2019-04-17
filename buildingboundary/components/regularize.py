@@ -15,7 +15,7 @@ from ..utils.error import ThresholdError
 from .merge import merge_segments
 
 
-def get_primary_segments(segments, num_points=sys.maxsize):
+def get_primary_segments(segments, num_points):
     """
     Checks the segments and returns the segments which are supported
     by at least the given number of points.
@@ -182,7 +182,7 @@ def add_perpendicular(primary_orientations, angle_epsilon=0.1):
     return primary_orientations
 
 
-def get_primary_orientations(segments, num_points=sys.maxsize,
+def get_primary_orientations(segments, num_points=None,
                              angle_epsilon=0.1):
     """
     Computes the primary orientations of the building by checking the
@@ -207,7 +207,10 @@ def get_primary_orientations(segments, num_points=sys.maxsize,
     primary_orientations : list of float
         The computed primary orientations in radians.
     """
-    primary_segments = get_primary_segments(segments, num_points=num_points)
+    if num_points is not None:
+        primary_segments = get_primary_segments(segments, num_points)
+    else:
+        primary_segments = []
 
     if len(primary_segments) > 0:
         primary_orientations = compute_primary_orientations(primary_segments,
@@ -254,7 +257,7 @@ def regularize_segments(segments, primary_orientations, max_error=None):
 
 def regularize_and_merge(segments, primary_orientations,
                          merge_angle, max_error=None,
-                         max_merge_distance=float('inf')):
+                         max_merge_distance=None):
     """
     Keeps regularizing and merging the segments until no changes
     happen.

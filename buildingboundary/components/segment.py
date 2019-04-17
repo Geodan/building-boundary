@@ -243,17 +243,17 @@ class BoundarySegment(object):
                  (self.points[:, 0] - self.end_points[0, 0]))
         self.sides = np.sign(sides)
 
-    def inflate(self, order='ccw'):
+    def inflate(self, order='cw'):
         """
         Moves the line segments to the outer most point of the object.
         """
         self.dist_points_line()
         self.side_points_line()
 
-        if order == 'ccw':
-            outside_points = np.where(self.sides == -1)[0]
-        elif order == 'cw':
+        if order == 'cw':
             outside_points = np.where(self.sides == 1)[0]
+        elif order == 'ccw':
+            outside_points = np.where(self.sides == -1)[0]
         else:
             raise ValueError('Invalid value for order.'
                              'Must be either \'cw\' or \'ccw\'.')
