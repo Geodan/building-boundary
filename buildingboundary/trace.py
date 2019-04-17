@@ -85,27 +85,15 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
         return np.array(bounding_box.exterior.coords)
 
     segments = boundary_segmentation(boundary_points, max_error)
-        boundary_segments = [BoundarySegment(s) for s in segments]
-        for s in boundary_segments:
-            s.fit_line(method='TLS')
+    boundary_segments = [BoundarySegment(s) for s in segments]
+    for s in boundary_segments:
+        s.fit_line(method='TLS')
 
     original_segments = boundary_segments.copy()
 
     boundary_segments, merge_history_1 = merge_segments(boundary_segments,
                                                         merge_angle,
                                                         max_merge_distance)
-
-    invalid_segments = check_error(boundary_segments, max_error)
-    if len(invalid_segments) > 0:
-        merged_segments = flatten_merge_history(merge_history_1)
-        boundary_segments = restore(boundary_segments, original_segments,
-                                    invalid_segments, merged_segments)
-
-    if len(boundary_segments) in [0, 1, 2]:
-        return []
-    elif len(boundary_segments) == 3:
-        vertices = compute_intersections(boundary_segments)
-        return vertices
 
     if primary_orientations is None or len(primary_orientations) == 0:
         primary_orientations = get_primary_orientations(boundary_segments,
@@ -128,7 +116,7 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
 
     if inflate:
         for s in boundary_segments:
-                s.inflate(order='cw')
+            s.inflate(order='cw')
 
 
     vertices = compute_intersections(boundary_segments)
