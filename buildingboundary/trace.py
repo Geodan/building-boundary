@@ -24,7 +24,9 @@ from .utils.angle import perpendicular
 def trace_boundary(points, max_error, merge_angle, alpha=None,
                    k=None, min_area=0, max_rectangularity=0.97,
                    max_merge_distance=None, num_points=None,
-                   primary_orientations=None, inflate=False):
+                   primary_orientations=None,
+                   perp_dist_weight=3,
+                   inflate=False):
     """
     Trace the boundary of a set of 2D points.
 
@@ -119,6 +121,7 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
             s.inflate(order='cw')
 
 
-    vertices = compute_intersections(boundary_segments)
+    vertices = compute_intersections(boundary_segments,
+                                     perp_dist_weight=perp_dist_weight)
 
     return vertices

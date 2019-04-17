@@ -33,7 +33,7 @@ def perpedicular_line(line, p):
     return [pa, pb, pc]
 
 
-def compute_intersections(segments, distance_weight=3):
+def compute_intersections(segments, perp_dist_weight=3):
     """
     Computes the intersections between the segments in sequence. If
     no intersection could be found or the perpendicular line results in
@@ -76,7 +76,7 @@ def compute_intersections(segments, distance_weight=3):
                                           distance(segment2.end_points[0],
                                                    perp_intersect))
 
-                if intersect_dist > perp_intersect_dist * distance_weight:
+                if intersect_dist > perp_intersect_dist * perp_dist_weight:
                     intersections.append(segment1.end_points[1])
                     intersections.append(perp_intersect)
                 else:
