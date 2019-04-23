@@ -64,6 +64,7 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
         The vertices of the computed boundary line
     """
     if alpha is not None:
+        order='cw'
         shape = compute_alpha_shape(points, alpha)
         if type(shape) == Polygon:
             boundary_points = np.array(shape.exterior.coords)
@@ -71,6 +72,7 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
             largest_polygon = max(shape, key=lambda s: s.area)
             boundary_points = np.array(largest_polygon.exterior.coords)
     elif k is not None:
+        order='ccw'
         boundary_points = concave_hull.compute(points, k, True)
         shape = Polygon(boundary_points)
     else:
@@ -118,7 +120,7 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
 
     if inflate:
         for s in boundary_segments:
-            s.inflate(order='cw')
+            s.inflate(order=order)
 
 
     vertices = compute_intersections(boundary_segments,
