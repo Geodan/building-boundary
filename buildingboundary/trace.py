@@ -84,7 +84,7 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
                                         given_angles=primary_orientations)
 
     if shape.area < min_area:
-        return bounding_box
+        return np.array(bounding_box.exterior.coords)
 
     rectangularity = shape.area / bounding_box.area
     if rectangularity > max_rectangularity:
