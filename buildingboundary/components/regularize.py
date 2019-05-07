@@ -4,14 +4,14 @@
 @author: Chris Lucas
 """
 
-import sys
 import math
 
 import numpy as np
+from shapely.geometry import Polygon, MultiPolygon
 
-from ..utils.angle import (min_angle_difference, to_positive_angle,
-                           perpendicular)
+from ..utils.angle import min_angle_difference, perpendicular
 from ..utils.error import ThresholdError
+from ..utils import create_segments
 from .merge import merge_segments
 
 
@@ -306,3 +306,19 @@ def regularize_and_merge(segments, primary_orientations,
                                    max_error=max_error)
 
     return segments, merge_history
+
+
+def polygon_orientations(polygon):
+    for s in create_segments(polygon.exterior.coords[:-1]):
+        dx, dy = s[0] - s[1]
+        yield math.atan2(dy, dx)
+
+
+def footprint_orientations(geom):
+    orientations = []
+    if type(geom) == Polygon:
+        orientations = list(polygon_orientations(geom))
+    elif type(geom) == MultiPolygon:
+        for p in geom:
+            orientations.extend(list(polygon_orientations(p)))
+    return orientations

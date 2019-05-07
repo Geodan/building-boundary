@@ -4,13 +4,12 @@
 @author: Chris Lucas
 """
 
-import math
 from bisect import insort_left
 
 import numpy as np
 
 from ..utils.angle import angle_difference
-from ..utils.utils import create_segments, distance
+from ..utils import create_segments, distance
 from .segment import BoundarySegment
 
 
@@ -36,7 +35,7 @@ def find_pivots(orientations, angle):
                             a1, a2 in create_segments(orientations)),
                            orientations.dtype)
     pivots_bool = ori_diff > angle
-    pivots_idx = list(np.where(pivots_bool == True)[0] + 1)
+    pivots_idx = list(np.where(pivots_bool == True)[0] + 1)  # noqa
 
     # edge case
     if pivots_idx[-1] > (len(orientations)-1):

@@ -6,7 +6,7 @@
 
 import numpy as np
 
-from ..utils.utils import distance
+from ..utils import distance
 
 
 def perpedicular_line(line, p):
