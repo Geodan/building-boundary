@@ -27,7 +27,8 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
                    k=None, min_area=0, max_rectangularity=0.97,
                    max_merge_distance=None, num_points=None,
                    primary_orientations=None, perp_dist_weight=3,
-                   inflate=False, footprint_geom=None):
+                   max_error_invalid=None, inflate=False,
+                   footprint_geom=None):
     """
     Trace the boundary of a set of 2D points.
 
@@ -94,7 +95,8 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
     for s in boundary_segments:
         s.fit_line(method='TLS')
 
-    original_segments = boundary_segments.copy()
+    if max_error_invalid is not None:
+        original_segments = boundary_segments.copy()
 
     boundary_segments, merge_history_1 = merge_segments(boundary_segments,
                                                         merge_angle,
@@ -118,12 +120,13 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
         max_merge_distance
     )
 
-    invalid_segments = check_error(boundary_segments, max_error)
-    if len(invalid_segments) > 0:
-        merge_history = merge_history_1 + merge_history_2
-        merged_segments = flatten_merge_history(merge_history)
-        boundary_segments = restore(boundary_segments, original_segments,
-                                    invalid_segments, merged_segments)
+    if max_error_invalid is not None:
+        invalid_segments = check_error(boundary_segments, max_error_invalid)
+        if len(invalid_segments) > 0:
+            merge_history = merge_history_1 + merge_history_2
+            merged_segments = flatten_merge_history(merge_history)
+            boundary_segments = restore(boundary_segments, original_segments,
+                                        invalid_segments, merged_segments)
 
     if inflate:
         for s in boundary_segments:
