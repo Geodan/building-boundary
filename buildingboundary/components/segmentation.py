@@ -67,6 +67,8 @@ def extract_segment(points, indices, distance):
     segment = list(max(sequences, key=len))
 
     segment = extend_segment(segment, points, indices, distance)
+    if len(segment) > 1:
+        segment = extend_segment(segment, points, indices, distance)
 
     return segment
 
