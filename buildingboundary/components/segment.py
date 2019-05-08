@@ -284,7 +284,6 @@ class BoundarySegment(object):
         The primary orientation closest to the orientation of this line
         segment.
         """
-        # MAYBE TODO: Check bigger orientations first and stop if found.
         po_diff = [min_angle_difference(self.orientation, o) for
                    o in primary_orientations]
         min_po_diff = min(po_diff)
