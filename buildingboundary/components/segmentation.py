@@ -108,15 +108,16 @@ def extract_segments(segments, points, indices, mask, distance):
     else:
         segment = extract_segment(points, indices, distance)
 
-    insert_loc = get_insert_loc(segments, segment)
-    segments.insert(insert_loc, segment)
+    if len(segment) > 1:
+        insert_loc = get_insert_loc(segments, segment)
+        segments.insert(insert_loc, segment)
 
-    mask[segment[0]:segment[-1]+1] = False
+        mask[segment[0]:segment[-1]+1] = False
 
-    sequences = get_remaining_sequences(indices, mask[indices])
+        sequences = get_remaining_sequences(indices, mask[indices])
 
-    for s in sequences:
-        extract_segments(segments, points, s, mask, distance)
+        for s in sequences:
+            extract_segments(segments, points, s, mask, distance)
 
 
 def boundary_segmentation(points, distance):
