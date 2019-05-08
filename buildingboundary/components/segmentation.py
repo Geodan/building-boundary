@@ -66,7 +66,6 @@ def extract_segment(points, indices, distance):
     sequences = np.split(inliers, np.where(np.diff(inliers) != 1)[0] + 1)
     segment = list(max(sequences, key=len))
 
-    segment = extend_segment(segment, points, indices, distance)
     if len(segment) > 1:
         segment = extend_segment(segment, points, indices, distance)
 
