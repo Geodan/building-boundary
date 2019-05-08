@@ -116,7 +116,7 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
         boundary_segments,
         primary_orientations,
         merge_angle,
-        max_error,
+        None,
         max_merge_distance
     )
 
