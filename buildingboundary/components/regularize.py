@@ -11,7 +11,7 @@ from shapely.geometry import Polygon, MultiPolygon
 
 from ..utils.angle import min_angle_difference, perpendicular
 from ..utils.error import ThresholdError
-from ..utils import create_segments
+from ..utils import create_segments, distance
 from .merge import merge_segments
 
 
@@ -311,7 +311,9 @@ def regularize_and_merge(segments, primary_orientations,
 def polygon_orientations(polygon):
     for s in create_segments(polygon.exterior.coords[:-1]):
         dx, dy = s[0] - s[1]
-        yield math.atan2(dy, dx)
+        dist = distance(s[0], s[1])
+        if dist > 1:
+            yield math.atan2(dy, dx)
 
 
 def footprint_orientations(geom):
