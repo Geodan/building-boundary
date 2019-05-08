@@ -80,6 +80,9 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
     else:
         raise ValueError('Either k or alpha needs to be set.')
 
+    if primary_orientations is None and footprint_geom is not None:
+        primary_orientations = footprint_orientations(loads(footprint_geom))
+
     bounding_box = compute_bounding_box(boundary_points,
                                         given_angles=primary_orientations)
 
@@ -101,9 +104,6 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
     boundary_segments, merge_history_1 = merge_segments(boundary_segments,
                                                         merge_angle,
                                                         max_merge_distance)
-
-    if primary_orientations is None and footprint_geom is not None:
-        primary_orientations = footprint_orientations(loads(footprint_geom))
 
     if primary_orientations is None or len(primary_orientations) == 0:
         primary_orientations = get_primary_orientations(boundary_segments,
