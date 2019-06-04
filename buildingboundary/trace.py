@@ -7,6 +7,7 @@
 import numpy as np
 from shapely.geometry import Polygon
 from shapely.wkt import loads
+from shapely.ops import cascaded_union
 
 import concave_hull
 
@@ -68,6 +69,12 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
     if alpha is not None:
         order = 'cw'
         shape = compute_alpha_shape(points, alpha)
+
+        if k is not None:
+            boundary_points = concave_hull.compute(points, k, True)
+            shape_ch = Polygon(boundary_points)
+            shape = cascaded_union([shape, shape_ch])
+
         if type(shape) == Polygon:
             boundary_points = np.array(shape.exterior.coords)
         else:
