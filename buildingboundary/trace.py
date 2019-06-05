@@ -91,7 +91,8 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
         primary_orientations = footprint_orientations(loads(footprint_geom))
 
     bounding_box = compute_bounding_box(boundary_points,
-                                        given_angles=primary_orientations)
+                                        given_angles=primary_orientations,
+                                        max_error=max_error_invalid)
 
     if shape.area < min_area:
         return np.array(bounding_box.exterior.coords)

@@ -7,7 +7,7 @@
 import math
 import numpy as np
 from scipy.spatial import ConvexHull
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
 
 
 def compute_edge_angles(edges):
@@ -111,7 +111,13 @@ def rotating_calipers_bbox(points, angles):
     return corner_points
 
 
-def compute_bounding_box(points, given_angles=None):
+def check_error(points, bbox, max_error):
+    distances = [bbox.exterior.distance(Point(p)) for p in points]
+    print(distances)
+    return all([d < max_error for d in distances])
+
+
+def compute_bounding_box(points, given_angles=None, max_error=None):
     """
     Computes the minimum area oriented bounding box of a set of points.
 
@@ -128,10 +134,19 @@ def compute_bounding_box(points, given_angles=None):
     hull = ConvexHull(points).simplices
     hull_unique_i = np.array(list(set([p for s in hull for p in s])))
     hull_points = points[hull_unique_i]
+
     if given_angles is None:
         angles = compute_edge_angles(points[hull])
     else:
         angles = given_angles
+
     bbox_corner_points = rotating_calipers_bbox(hull_points, angles)
     bbox = Polygon(bbox_corner_points)
+
+    if max_error is not None and given_angles is not None:
+        if not check_error(points, bbox, max_error):
+            angles = compute_edge_angles(points[hull])
+            bbox_corner_points = rotating_calipers_bbox(hull_points, angles)
+            bbox = Polygon(bbox_corner_points)
+
     return bbox
