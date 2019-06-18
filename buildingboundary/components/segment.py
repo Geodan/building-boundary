@@ -190,17 +190,17 @@ class BoundarySegment(object):
 
     def residuals(self):
         """
-        Computes the average distance between the points and the fitted
+        Computes the max distance between the points and the fitted
         line.
 
         Returns
         -------
         error : float
-            The average distance between the points and the fitted line.
+            The max distance between the points and the fitted line.
         """
         self.dist_points_line()
 
-        return sum(abs(self.distances)) / len(self.points)
+        return max(abs(self.distances))
 
     def dist_points_line(self):
         """
