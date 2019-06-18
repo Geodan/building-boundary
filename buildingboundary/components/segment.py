@@ -102,6 +102,14 @@ class BoundarySegment(object):
             self.b = -1
             self.c = (np.mean(self.points[:, 1]) -
                       np.mean(self.points[:, 0]) * self.a)
+        elif all(self.points[0, 0] == self.points[:, 0]):
+            self.a = 1
+            self.b = 0
+            self.c = -self.points[0, 0]
+        elif all(self.points[0, 1] == self.points[:, 1]):
+            self.a = 0
+            self.b = 1
+            self.c = -self.points[0, 1]
         else:
             if method == 'OLS':
                 self.a, self.c = np.polyfit(self.points[:, 0],
