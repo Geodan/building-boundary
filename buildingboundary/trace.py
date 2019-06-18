@@ -72,7 +72,7 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
 
         if k is not None:
             boundary_points = concave_hull.compute(points, k, True)
-            shape_ch = Polygon(boundary_points)
+            shape_ch = Polygon(boundary_points).buffer(0)
             shape = cascaded_union([shape, shape_ch])
 
         if type(shape) == Polygon:
@@ -83,7 +83,7 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
     elif k is not None:
         order = 'ccw'
         boundary_points = concave_hull.compute(points, k, True)
-        shape = Polygon(boundary_points)
+        shape = Polygon(boundary_points).buffer(0)
     else:
         raise ValueError('Either k or alpha needs to be set.')
 
