@@ -248,7 +248,7 @@ def regularize_segments(segments, primary_orientations, max_error=None):
     for s in segments:
         target_orientation = s.target_orientation(primary_orientations)
         try:
-            s.regularize(math.tan(target_orientation), max_error=max_error)
+            s.regularize(target_orientation, max_error=max_error)
         except ThresholdError:
             pass
 

@@ -297,32 +297,44 @@ class BoundarySegment(object):
         min_po_diff = min(po_diff)
         return primary_orientations[po_diff.index(min_po_diff)]
 
-    def regularize(self, slope, max_error=None):
+    def regularize(self, orientation, max_error=None):
         """
-        Recreates the line segment based on the given slope.
+        Recreates the line segment based on the given orientation.
 
         Parameters
         ----------
-        slope : float or int
-            The slope the line segment should have.
+        orientation : float or int
+            The orientation the line segment should have. In radians from
+            0 to pi (east to west counterclockwise) and
+            0 to -pi (east to west clockwise).
         max_error : float or int
-            The maximum error (average distance points to line) the
+            The maximum error (max distance points to line) the
             fitted line is allowed to have. A ThresholdError will be
             raised if this max error is exceeded.
 
         Raises
         ------
         ThresholdError
-            If the error of the fitted line (average distance points to
+            If the error of the fitted line (max distance points to
             line) exceeds the given max error.
 
         .. [1] https://math.stackexchange.com/questions/1377716/how-to-find-a-least-squares-line-with-a-known-slope
         """
-        if not np.isclose(slope, math.tan(self.orientation)):
-            self.a = slope
-            self.b = -1
-            self.c = (sum(self.points[:, 1] - self.a * self.points[:, 0]) /
-                      len(self.points))
+        if not np.isclose(orientation, self.orientation):
+            if np.isclose(abs(orientation), math.pi / 2):
+                self.a = 1
+                self.b = 0
+                self.c = np.mean(self.points[:, 0])
+            elif (np.isclose(abs(orientation), math.pi) or
+                    np.isclose(orientation, 0)):
+                self.a = 0
+                self.b = 1
+                self.c = np.mean(self.points[:, 1])
+            else:
+                self.a = math.tan(orientation)
+                self.b = -1
+                self.c = (sum(self.points[:, 1] - self.a * self.points[:, 0]) /
+                          len(self.points))
 
             if max_error is not None:
                 residuals = self.residuals()
