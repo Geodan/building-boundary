@@ -102,6 +102,10 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
         return np.array(bounding_box.exterior.coords)
 
     segments = boundary_segmentation(boundary_points, max_error)
+
+    if len(segments) == 1:
+        return np.array(bounding_box.exterior.coords)
+
     boundary_segments = [BoundarySegment(s) for s in segments]
     for s in boundary_segments:
         s.fit_line(method='TLS')
