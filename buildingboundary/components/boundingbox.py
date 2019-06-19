@@ -113,7 +113,6 @@ def rotating_calipers_bbox(points, angles):
 
 def check_error(points, bbox, max_error):
     distances = [bbox.exterior.distance(Point(p)) for p in points]
-    print(distances)
     return all([d < max_error for d in distances])
 
 
