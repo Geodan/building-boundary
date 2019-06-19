@@ -15,12 +15,11 @@ from .components.alphashape import compute_alpha_shape
 from .components.boundingbox import compute_bounding_box
 from .components.segment import BoundarySegment
 from .components.segmentation import boundary_segmentation
-from .components.merge import merge_segments, flatten_merge_history
+from .components.merge import merge_segments
 from .components.intersect import compute_intersections
 from .components.regularize import (get_primary_orientations,
-                                    regularize_and_merge,
+                                    regularize_segments,
                                     footprint_orientations)
-from .components.assess import check_error, restore
 from .utils.angle import perpendicular
 
 
@@ -103,19 +102,17 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
 
     segments = boundary_segmentation(boundary_points, max_error)
 
-    if len(segments) == 1:
+    if len(segments) == 0 or len(segments) == 1:
         return np.array(bounding_box.exterior.coords)
 
     boundary_segments = [BoundarySegment(s) for s in segments]
     for s in boundary_segments:
         s.fit_line(method='TLS')
 
-    if max_error_invalid is not None:
-        original_segments = boundary_segments.copy()
-
-    boundary_segments, merge_history_1 = merge_segments(boundary_segments,
-                                                        merge_angle,
-                                                        max_merge_distance)
+    boundary_segments = merge_segments(boundary_segments,
+                                       merge_angle,
+                                       max_distance=max_merge_distance,
+                                       max_error=max_error_invalid)
 
     if primary_orientations is None or len(primary_orientations) == 0:
         primary_orientations = get_primary_orientations(boundary_segments,
@@ -124,21 +121,9 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
     if len(primary_orientations) == 1:
         primary_orientations.append(perpendicular(primary_orientations[0]))
 
-    boundary_segments, merge_history_2 = regularize_and_merge(
-        boundary_segments,
-        primary_orientations,
-        merge_angle,
-        None,
-        max_merge_distance
-    )
-
-    if max_error_invalid is not None:
-        invalid_segments = check_error(boundary_segments, max_error_invalid)
-        if len(invalid_segments) > 0:
-            merge_history = merge_history_1 + merge_history_2
-            merged_segments = flatten_merge_history(merge_history)
-            boundary_segments = restore(boundary_segments, original_segments,
-                                        invalid_segments, merged_segments)
+    boundary_segments = regularize_segments(boundary_segments,
+                                            primary_orientations,
+                                            max_error=max_error_invalid)
 
     if inflate:
         for s in boundary_segments:

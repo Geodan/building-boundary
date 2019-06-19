@@ -12,7 +12,6 @@ from shapely.geometry import Polygon, MultiPolygon
 from ..utils.angle import min_angle_difference, perpendicular
 from ..utils.error import ThresholdError
 from ..utils import create_segments, distance
-from .merge import merge_segments
 
 
 def get_primary_segments(segments, num_points):
@@ -253,59 +252,6 @@ def regularize_segments(segments, primary_orientations, max_error=None):
             pass
 
     return segments
-
-
-def regularize_and_merge(segments, primary_orientations,
-                         merge_angle, max_error=None,
-                         max_merge_distance=None):
-    """
-    Keeps regularizing and merging the segments until no changes
-    happen.
-
-    Parameters
-    ----------
-    segments : list of BoundarySegment
-        The wall segments to regularize.
-    primary_orientations : list of floats
-        The orientations all other orientations will be set to, given
-        in radians.
-    merge_angle : float or int
-        Two segments will be merged if the difference between their
-        orientations are within this value.
-    max_error : float or int, optional
-        The maximum error a segment can have after regularization. If
-        above the original orientation will be kept.
-
-    Returns
-    -------
-    segments : list of BoundarySegment
-        The wall segments after regularization and merging.
-    merge_history : list of list of int
-        The indices of all merged segments
-    """
-    prev_num_segments = 0
-    num_segments = len(segments)
-
-    merge_history = []
-
-    while num_segments != prev_num_segments:
-        prev_num_segments = len(segments)
-
-        segments = regularize_segments(segments,
-                                       primary_orientations,
-                                       max_error=max_error)
-
-        segments, merge_history_part = merge_segments(segments,
-                                                      merge_angle,
-                                                      max_merge_distance)
-        merge_history.extend(merge_history_part)
-
-        num_segments = len(segments)
-
-    segments = regularize_segments(segments, primary_orientations,
-                                   max_error=max_error)
-
-    return segments, merge_history
 
 
 def polygon_orientations(polygon):
