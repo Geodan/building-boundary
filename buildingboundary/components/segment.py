@@ -147,7 +147,7 @@ class BoundarySegment(object):
             The X and Y coordinates of the closest point to the given
             point on the fitted line.
 
-        .. [1] https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_an_equation
+        .. [1] https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line#Line_defined_by_an_equation  # noqa
         """
         if self.a == 0 and self.b == 0:
             raise ValueError('Invalid line. Line coefficients a and b '
@@ -243,7 +243,7 @@ class BoundarySegment(object):
             The side each point lies from the line segment. `0` is on the line,
             `1` is on one side, `-1` on the other.
 
-        .. [1] https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line
+        .. [1] https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line  # noqa
         """
         sides = ((self.end_points[1, 0] - self.end_points[0, 0]) *
                  (self.points[:, 1] - self.end_points[0, 1]) -
@@ -318,8 +318,12 @@ class BoundarySegment(object):
             If the error of the fitted line (max distance points to
             line) exceeds the given max error.
 
-        .. [1] https://math.stackexchange.com/questions/1377716/how-to-find-a-least-squares-line-with-a-known-slope
+        .. [1] https://math.stackexchange.com/questions/1377716/how-to-find-a-least-squares-line-with-a-known-slope  # noqa
         """
+        prev_a = self.a
+        prev_b = self.b
+        prev_c = self.c
+
         if not np.isclose(orientation, self.orientation):
             if np.isclose(abs(orientation), math.pi / 2):
                 self.a = 1
@@ -339,6 +343,9 @@ class BoundarySegment(object):
             if max_error is not None:
                 residuals = self.residuals()
                 if residuals > max_error:
+                    self.a = prev_a
+                    self.b = prev_b
+                    self.c = prev_c
                     raise ThresholdError("Could not fit a proper line. "
                                          "Error: {}".format(residuals))
 
