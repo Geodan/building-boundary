@@ -7,7 +7,7 @@
 import math
 
 import numpy as np
-from shapely.geometry import Polygon, MultiPolygon
+from shapely.geometry import Polygon, MultiPolygon, LineString, MultiLineString
 
 from ..utils.angle import min_angle_difference, perpendicular
 from ..utils.error import ThresholdError
@@ -254,19 +254,29 @@ def regularize_segments(segments, primary_orientations, max_error=None):
     return segments
 
 
-def polygon_orientations(polygon):
-    for s in create_segments(polygon.exterior.coords[:-1]):
+def line_orientations(line_coords):
+    orientations = []
+    for s in create_segments(line_coords):
         dx, dy = s[0] - s[1]
-        dist = distance(s[0], s[1])
-        if dist > 1:
-            yield math.atan2(dy, dx)
+        orientation = math.atan2(dy, dx)
+        if not any([np.isclose(orientation, o) for o in orientations]):
+            orientations.append(orientation)
+    return orientations
 
 
 def footprint_orientations(geom):
     orientations = []
     if type(geom) == Polygon:
-        orientations = list(polygon_orientations(geom))
+        orientations = line_orientations(geom.exterior.coords[:-1])
     elif type(geom) == MultiPolygon:
         for p in geom:
-            orientations.extend(list(polygon_orientations(p)))
+            orientations.extend(line_orientations(p.exterior.coords[:-1]))
+    elif type(geom) == LineString:
+        orientations = line_orientations(geom.coords)
+    elif type(geom) == MultiLineString:
+        for l in geom:
+            orientations.extend(line_orientations(l.coords))
+    else:
+        raise TypeError('Invalid geometry type. Expects Polygon, '
+                        'MultiPolygon, LineString, or MultiLineString')
     return orientations
