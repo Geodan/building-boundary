@@ -109,11 +109,6 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
     for s in boundary_segments:
         s.fit_line(method='TLS')
 
-    boundary_segments = merge_segments(boundary_segments,
-                                       merge_angle,
-                                       max_distance=max_merge_distance,
-                                       max_error=max_error_invalid)
-
     if primary_orientations is None or len(primary_orientations) == 0:
         primary_orientations = get_primary_orientations(boundary_segments,
                                                         num_points)
