@@ -5,7 +5,7 @@
 """
 
 import numpy as np
-import pcl
+from skimage.measure import LineModelND, ransac #import pcl
 
 from .segment import BoundarySegment
 
@@ -28,16 +28,23 @@ def ransac_line_segmentation(points, distance):
         The indices of the inlier points
     """
     points_3 = np.vstack((points[:, 0], points[:, 1], np.zeros(len(points)))).T
-    cloud = pcl.PointCloud()
-    cloud.from_array(points_3.astype(np.float32))
-    seg = cloud.make_segmenter()
-    seg.set_model_type(pcl.SACMODEL_LINE)
-    seg.set_method_type(pcl.SAC_RANSAC)
-    seg.set_distance_threshold(distance)
-    seg.set_max_iterations(1000)
-    seg.set_optimize_coefficients(False)
-    inliers, _ = seg.segment()
-    return inliers
+
+    
+    model_robust, inliers = ransac(points_3, LineModelND, min_samples=2,
+                               residual_threshold=1, max_trials=1000)
+    outliers = inliers == False
+    result = np.where(inliers == True)
+
+    #cloud = pcl.PointCloud()
+    #cloud.from_array(points_3.astype(np.float32))
+    #seg = cloud.make_segmenter()
+    #seg.set_model_type(pcl.SACMODEL_LINE)
+    #seg.set_method_type(pcl.SAC_RANSAC)
+    #seg.set_distance_threshold(distance)
+    #seg.set_max_iterations(1000)
+    #seg.set_optimize_coefficients(False)
+    #inliers, _ = seg.segment()
+    return result
 
 
 def extend_segment(segment, points, indices, distance):
