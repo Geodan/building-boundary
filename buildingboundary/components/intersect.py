@@ -4,22 +4,52 @@
 @author: Chris Lucas
 """
 
-import math
 import numpy as np
 
-
-def distance(p1, p2):
-    return math.hypot(*(p1-p2))
+from ..utils import distance
 
 
-def distance_to_intersect(segment1, segment2, intersect):
-    end_points = [segment1.end_points[0], segment1.end_points[1],
-                  segment2.end_points[0], segment2.end_points[1]]
-    distances = [distance(point, intersect) for point in end_points]
-    return min(distances)
+def perpedicular_line(line, p):
+    """
+    Returns a perpendicular line to a line at a point.
+
+    Parameters
+    ----------
+    line : (1x3) array-like
+        The a, b, and c coefficients (ax + by + c = 0) of a line.
+    p : (1x2) array-like
+        The coordinates of a point on the line.
+
+    Returns
+    -------
+    line : (1x3) array-like
+        The a, b, and c coefficients (ax + by + c = 0) of the line
+        perpendicular to the input line at point p.
+    """
+    a, b, c = line
+    pa = b
+    pb = -a
+    pc = -(p[0] * b - p[1] * a)
+    return [pa, pb, pc]
 
 
-def compute_intersections(segments, max_interect_distance=float('inf')):
+def compute_intersections(segments, perp_dist_weight=3):
+    """
+    Computes the intersections between the segments in sequence. If
+    no intersection could be found or the perpendicular line results in
+    an intersection closer to the segments a perpendicular line will be
+    added in between the two segments.
+
+    Parameters
+    ----------
+    segments : list of BoundarySegment
+        The wall segments to compute intersections for.
+
+    Returns
+    -------
+    intersections : (Mx1) array
+        The computed intersections.
+    """
     intersections = []
     num_segments = len(segments)
     for i in range(num_segments):
@@ -29,31 +59,37 @@ def compute_intersections(segments, max_interect_distance=float('inf')):
         else:
             segment2 = segments[0]
 
-        intersect = segment1.line_intersect([segment2.slope,
-                                             segment2.intercept])
+        intersect = segment1.line_intersect([segment2.a,
+                                             segment2.b,
+                                             segment2.c])
 
         if any(intersect):
-            intersect_distance = distance_to_intersect(segment1, segment2,
-                                                       intersect)
-            if intersect_distance < max_interect_distance:
-                intersections.append(intersect)
-            else:
-                intersect = np.array([])
+            intersect_dist = min(distance(segment1.end_points[1], intersect),
+                                 distance(segment2.end_points[0], intersect))
 
-        if not any(intersect):
+            line = perpedicular_line([segment1.a, segment1.b, segment1.c],
+                                     segment1.end_points[1])
+            perp_intersect = segment2.line_intersect(line)
+            if any(perp_intersect):
+                perp_intersect_dist = min(distance(segment1.end_points[1],
+                                                   perp_intersect),
+                                          distance(segment2.end_points[0],
+                                                   perp_intersect))
+
+                if intersect_dist > perp_intersect_dist * perp_dist_weight:
+                    intersections.append(segment1.end_points[1])
+                    intersections.append(perp_intersect)
+                else:
+                    intersections.append(intersect)
+            else:
+                intersections.append(intersect)
+        else:
             # if no intersection was found add a perpendicular line at the end
             # and intersect using the new line
-            if i != num_segments - 1:
-                p = segments[i + 1].end_points[0]
-                slope = -(1 / segments[i + 1].slope)
-            else:
-                p = segments[0].end_points[0]
-                slope = -(1 / segments[0].slope)
-
-            intercept = - slope * p[0] + p[1]
-            intersect = segments[i].line_intersect([slope, intercept])
-            if any(intersect):
-                intersections.append(intersect)
-                intersections.append(p)
+            line = perpedicular_line([segment1.a, segment1.b, segment1.c],
+                                     segment1.end_points[1])
+            intersect = segment2.line_intersect(line)
+            intersections.append(segment1.end_points[1])
+            intersections.append(intersect)
 
     return np.array(intersections)

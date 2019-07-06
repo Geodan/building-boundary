@@ -8,11 +8,12 @@ def read(filename):
 
 setup(
     name="buildingboundary",
-    version="0.1.0",
+    version="0.3.0",
     author="Chris Lucas",
     author_email="chris.lucas@geodan.nl",
     description=(
-        "A script to trace the boundary of a building (part) in a point cloud."),
+        "A script to trace the boundary of a building (part) in a point cloud."
+    ),
     license="MIT",
     keywords="building boundary trace point cloud",
     packages=find_packages(),
@@ -25,6 +26,8 @@ setup(
     install_requires=[
         'numpy',
         'scipy',
+        'shapely',
+        'cgal-bindings'
     ],
     zip_safe=False
 )

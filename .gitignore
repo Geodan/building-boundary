@@ -1,6 +1,9 @@
 .spyproject/
 .vscode/
+.pytest_cache/
 data/
+debug/
+tests/
 
 # Compiled python modules.
 *.pyc

@@ -4,21 +4,31 @@
 @author: Chris Lucas
 """
 
+import numpy as np
+from shapely.geometry import Polygon
+from shapely.wkt import loads
+from shapely.ops import cascaded_union
+
 import concave_hull
 
-from .components.segmentation import (convex_fit, merge_segments,
-                                      remove_small_corners)
+from .components.alphashape import compute_alpha_shape
+from .components.boundingbox import compute_bounding_box
+from .components.segment import BoundarySegment
+from .components.segmentation import boundary_segmentation
+from .components.merge import merge_segments
 from .components.intersect import compute_intersections
-from .components.regularize import (compute_primary_orientations,
-                                    regularize_lines)
-from .components.assess import check_error, restore
-from .components.align import align_by_intercept
+from .components.regularize import (get_primary_orientations,
+                                    regularize_segments,
+                                    footprint_orientations)
 from .utils.angle import perpendicular
 
 
-def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
-                   max_intersect_distance=float('inf'), alignment=0,
-                   primary_orientations=None, inflate=False):
+def trace_boundary(points, max_error, merge_angle, alpha=None,
+                   k=None, min_area=0, max_rectangularity=0.97,
+                   max_merge_distance=None, num_points=None,
+                   primary_orientations=None, perp_dist_weight=3,
+                   max_error_invalid=None, inflate=False,
+                   footprint_geom=None):
     """
     Trace the boundary of a set of 2D points.
 
@@ -55,41 +65,71 @@ def trace_boundary(points, k, max_error, merge_angle, num_points=float('inf'),
     : (Mx2) array
         The vertices of the computed boundary line
     """
-    boundary_points = concave_hull.compute(points, k, True)
+    if alpha is not None:
+        order = 'cw'
+        shape = compute_alpha_shape(points, alpha)
 
-    boundary_segments = []
-    convex_fit(boundary_points, boundary_segments, max_error=max_error)
-    original_segments = boundary_segments.copy()
+        if k is not None:
+            boundary_points = concave_hull.compute(points, k, True)
+            shape_ch = Polygon(boundary_points).buffer(0)
+            shape = cascaded_union([shape, shape_ch])
 
-    boundary_segments, merged_segments = merge_segments(boundary_segments, merge_angle)
+        if type(shape) == Polygon:
+            boundary_points = np.array(shape.exterior.coords)
+        else:
+            largest_polygon = max(shape, key=lambda s: s.area)
+            boundary_points = np.array(largest_polygon.exterior.coords)
+    elif k is not None:
+        order = 'ccw'
+        boundary_points = concave_hull.compute(points, k, True)
+        shape = Polygon(boundary_points).buffer(0)
+    else:
+        raise ValueError('Either k or alpha needs to be set.')
 
-    boundary_segments, removed_segments = remove_small_corners(boundary_segments)
+    if primary_orientations is None and footprint_geom is not None:
+        primary_orientations = footprint_orientations(loads(footprint_geom))
 
-    if len(boundary_segments) in [0, 1, 2]:
-        return []
-    elif len(boundary_segments) == 3:
-        vertices = compute_intersections(boundary_segments)
-        return vertices
+    bounding_box = compute_bounding_box(boundary_points,
+                                        given_angles=primary_orientations,
+                                        max_error=max_error_invalid)
 
-    if primary_orientations is None:
-        primary_orientations = compute_primary_orientations(boundary_segments, num_points)
-    elif len(primary_orientations) == 1:
+    if shape.area < min_area:
+        return np.array(bounding_box.exterior.coords)
+
+    rectangularity = shape.area / bounding_box.area
+    if rectangularity > max_rectangularity:
+        return np.array(bounding_box.exterior.coords)
+
+    segments = boundary_segmentation(boundary_points, max_error)
+
+    if len(segments) == 0 or len(segments) == 1:
+        return np.array(bounding_box.exterior.coords)
+
+    boundary_segments = [BoundarySegment(s) for s in segments]
+    for s in boundary_segments:
+        s.fit_line(method='TLS')
+
+    boundary_segments = merge_segments(boundary_segments,
+                                       merge_angle,
+                                       max_distance=max_merge_distance,
+                                       max_error=max_error_invalid)
+
+    if primary_orientations is None or len(primary_orientations) == 0:
+        primary_orientations = get_primary_orientations(boundary_segments,
+                                                        num_points)
+
+    if len(primary_orientations) == 1:
         primary_orientations.append(perpendicular(primary_orientations[0]))
 
-    boundary_segments = regularize_lines(boundary_segments, primary_orientations,
-                                         merge_angle, max_error)
-
-    invalid_segments = check_error(boundary_segments, max_error*1.5)
-    boundary_segments = restore(boundary_segments, original_segments, invalid_segments,
-                                merged_segments, removed_segments)
-
-    if alignment != 0:
-        align_by_intercept(boundary_segments, alignment)
+    boundary_segments = regularize_segments(boundary_segments,
+                                            primary_orientations,
+                                            max_error=max_error_invalid)
 
     if inflate:
         for s in boundary_segments:
-            s.inflate()
+            s.inflate(order=order)
 
-    vertices = compute_intersections(boundary_segments, max_intersect_distance)
+    vertices = compute_intersections(boundary_segments,
+                                     perp_dist_weight=perp_dist_weight)
 
     return vertices

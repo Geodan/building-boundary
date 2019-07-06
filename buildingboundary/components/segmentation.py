@@ -4,114 +4,149 @@
 @author: Chris Lucas
 """
 
-import math
 import numpy as np
-from scipy.spatial import ConvexHull
+import pcl
 
-from ..utils.error import ThresholdError
-from ..utils.angle import angle_difference
 from .segment import BoundarySegment
 
 
-def convex_fit(points, boundary_segments, max_error):
-    hull = ConvexHull(points)
-    hull.vertices.sort()
-    segments = zip(hull.vertices, np.roll(hull.vertices, -1))
+def ransac_line_segmentation(points, distance):
+    """
+    Fit a line using RANSAC.
 
-    for s in segments:
-        if s[1]+1 == len(hull.points) or s[1] == 0:
-            s_points = hull.points[s[0]:]
+    Parameters
+    ----------
+    points : (Mx2) array
+        The coordinates of the points
+    distance : float
+        The maximum distance between a point and a line for a point to be
+        considered belonging to that line.
+
+    Returns
+    -------
+    inliers : list of int
+        The indices of the inlier points
+    """
+    points_3 = np.vstack((points[:, 0], points[:, 1], np.zeros(len(points)))).T
+    cloud = pcl.PointCloud()
+    cloud.from_array(points_3.astype(np.float32))
+    seg = cloud.make_segmenter()
+    seg.set_model_type(pcl.SACMODEL_LINE)
+    seg.set_method_type(pcl.SAC_RANSAC)
+    seg.set_distance_threshold(distance)
+    seg.set_max_iterations(1000)
+    seg.set_optimize_coefficients(False)
+    inliers, _ = seg.segment()
+    return inliers
+
+
+def extend_segment(segment, points, indices, distance):
+    line_segment = BoundarySegment(points[segment])
+    line_segment.fit_line(method='TLS')
+
+    for i in range(segment[0]-1, indices[0]-1, -1):
+        if line_segment.dist_point_line(points[i]) < distance:
+            segment.insert(0, i)
         else:
-            s_points = hull.points[s[0]:s[1]+1]
+            break
 
-        if len(s_points) == 1:
-            continue
+    for i in range(segment[-1]+1, indices[-1]+1):
+        if line_segment.dist_point_line(points[i]) < distance:
+            segment.append(i)
+        else:
+            break
 
-        try:
-            segment = BoundarySegment(s_points)
-            segment.fit_line(method='TLS', max_error=max_error)
-            boundary_segments.append(segment)
-        except ThresholdError:
-            convex_fit(s_points, boundary_segments, max_error=max_error)
+    return segment
 
 
-def merge_segments(segments, merge_angle):
-    prev_segments = segments.copy()
-    n_segments = len(segments)
-    n_prev_segments = 0
+def extract_segment(points, indices, distance):
+    inliers = ransac_line_segmentation(points[indices], distance)
+    inliers = indices[inliers]
 
-    merged_segments = []
-    iteration = 0
+    sequences = np.split(inliers, np.where(np.diff(inliers) != 1)[0] + 1)
+    segment = list(max(sequences, key=len))
 
-    while n_segments != n_prev_segments:
-        n_prev_segments = len(prev_segments)
+    if len(segment) > 1:
+        segment = extend_segment(segment, points, indices, distance)
 
-        merged_segments.append([])
+    return segment
 
-        orientations = np.array([s.orientation for s in prev_segments])
-        ori_diff = np.fromiter((angle_difference(a1, a2) for
-                                a1, a2 in zip(orientations,
-                                              np.roll(orientations, -1))),
-                               orientations.dtype)
-        pivots_bool = ori_diff > merge_angle
-        pivots_idx = np.array([0] + list(np.where(pivots_bool == True)[0] + 1))
-        new_segments = []
 
-        for i, (k, n) in enumerate(zip(pivots_idx[:-1], np.roll(pivots_idx, -1)[:-1])):
-            points = [prev_segments[k].points[0]]
-            for s in prev_segments[k:n]:
-                points.extend(s.points[1:])
-            merged_segment = BoundarySegment(np.array(points))
-            merged_segment.fit_line(method='TLS')
-            new_segments.append(merged_segment)
+def get_insert_loc(segments, segment):
+    if len(segments) == 0:
+        return 0
+    if segment[0] > segments[-1][0]:
+        return len(segments)
 
-            merged_segments[-1].append(list(range(k, n)))
+    lo = 0
+    hi = len(segments)
+    while lo < hi:
+        mid = (lo + hi) // 2
+        if segment[0] < segments[mid][0]:
+            hi = mid
+        else:
+            lo = mid + 1
+    return lo
 
-        n_segments = len(new_segments)
-        prev_segments = new_segments
 
-        iteration += 1
+def get_remaining_sequences(indices, mask):
+    sequences = np.split(indices, np.where(np.diff(mask) == 1)[0] + 1)
 
-    # track merged segments
-    if iteration > 2:
-        prev_merged_segments = merged_segments[-2]
-        for next_merged_segments in merged_segments[::-1][2:]:
-            new_merged_segments = []
-            for s in prev_merged_segments:
-                new_segment = []
-                for j in s:
-                    new_segment.extend(next_merged_segments[j])
-                new_merged_segments.append(new_segment)
-            prev_merged_segments = new_merged_segments.copy()
-        merged_segments = new_merged_segments
+    if mask[0]:
+        sequences = [s for i, s in enumerate(sequences) if i % 2 == 0]
     else:
-        merged_segments = merged_segments[0]
+        sequences = [s for i, s in enumerate(sequences) if i % 2 != 0]
 
-    return new_segments, merged_segments
+    sequences = [s for s in sequences if len(s) > 1]
+
+    return sequences
 
 
-def remove_small_corners(segments, n_points=2):
-    to_remove = []
-    n_segments = len(segments)
+def extract_segments(segments, points, indices, mask, distance):
+    if len(indices) == 2:
+        segment = indices
+    else:
+        segment = extract_segment(points, indices, distance)
 
-    for i in range(n_segments):
-        s = segments[i]
-        if len(s.points) <= n_points:
+    if len(segment) > 1:
+        insert_loc = get_insert_loc(segments, segment)
+        segments.insert(insert_loc, segment)
 
-            # Edge cases for first and last segment
-            if i == 0:
-                angle = angle_difference(segments[n_segments-1].orientation,
-                                         segments[1].orientation)
-            elif i == n_segments-1:
-                angle = angle_difference(segments[i-1].orientation,
-                                         segments[0].orientation)
-            else:
-                angle = angle_difference(segments[i-1].orientation,
-                                         segments[i+1].orientation)
+        mask[segment[0]:segment[-1]+1] = False
 
-            if (angle > math.radians(80) and angle < math.radians(100)):
-                to_remove.append(i)
+        sequences = get_remaining_sequences(indices, mask[indices])
 
-    new_segments = [s for i, s in enumerate(segments) if i not in to_remove]
+        for s in sequences:
+            extract_segments(segments, points, s, mask, distance)
 
-    return new_segments, to_remove
+
+def boundary_segmentation(points, distance):
+    """
+    Extract linear segments using RANSAC.
+
+    Parameters
+    ----------
+    points : (Mx2) array
+        The coordinates of the points.
+    distance : float
+        The maximum distance between a point and a line for a point to be
+        considered belonging to that line.
+
+    Returns
+    -------
+    segments : list of array
+        The linear segments.
+    """
+    points_shifted = points.copy()
+    shift = np.min(points_shifted, axis=0)
+    points_shifted -= shift
+
+    mask = np.ones(len(points_shifted), dtype=np.bool)
+    indices = np.arange(len(points_shifted))
+
+    segments = []
+    extract_segments(segments, points_shifted, indices, mask, distance)
+
+    segments = [points_shifted[i]+shift for i in segments]
+
+    return segments
