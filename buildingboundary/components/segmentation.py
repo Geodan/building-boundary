@@ -27,8 +27,6 @@ def ransac_line_segmentation(points, distance):
     inliers : list of int
         The indices of the inlier points
     """
-    points_3 = np.vstack((points[:, 0], points[:, 1], np.zeros(len(points)))).T
-
     
     model_robust, inliers = ransac(points_3, LineModelND, min_samples=2,
                                residual_threshold=1, max_trials=1000)
