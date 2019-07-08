@@ -7,3 +7,15 @@ from .components import alphashape
 from .components import boundingbox
 from .components import merge
 from .utils import angle
+
+__all__ = [
+    'trace_boundary',
+    'intersect',
+    'regularize',
+    'segment',
+    'segmentation',
+    'alphashape',
+    'boundingbox',
+    'merge',
+    'angle'
+]
