@@ -26,7 +26,8 @@ setup(
     install_requires=[
         'numpy',
         'scipy',
-        'shapely'
+        'shapely',
+        'cgal-bindings'
     ],
     zip_safe=False
 )
