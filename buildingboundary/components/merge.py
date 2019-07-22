@@ -21,9 +21,15 @@ def line_angle(line):
 def has_offset_line(line_idx, lines, merge_angle, max_distance):
     num_lines = len(lines)
 
+    l2i = (line_idx + 1) % num_lines
+    l3i = (line_idx + 2) % num_lines
+
+    if line_idx == l2i or line_idx == l3i:
+        return False
+
     l1 = lines[line_idx]
-    l2 = lines[(line_idx + 1) % num_lines]
-    l3 = lines[(line_idx + 2) % num_lines]
+    l2 = lines[l2i]
+    l3 = lines[l3i]
 
     if distance(*l2) < max_distance:
         a1 = line_angle(l1)
@@ -44,7 +50,9 @@ def subsequent_offset_lines(line_idx, lines, merge_angle,
 
         if next_line_idx >= num_lines:
             next_line_idx = next_line_idx % num_lines
-            if (next_line_idx in merged_lines or
+
+            if (next_line_idx == line_idx or
+                    next_line_idx in merged_lines or
                     next_line_idx + 1 in merged_lines):
                 offset -= 2
                 break

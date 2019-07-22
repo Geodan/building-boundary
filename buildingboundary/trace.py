@@ -102,7 +102,7 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
 
     segments = boundary_segmentation(boundary_points, max_error)
 
-    if len(segments) == 0 or len(segments) == 1:
+    if len(segments) in [0, 1, 2]:
         return np.array(bounding_box.exterior.coords)
 
     boundary_segments = [BoundarySegment(s) for s in segments]
