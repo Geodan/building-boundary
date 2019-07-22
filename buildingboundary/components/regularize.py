@@ -307,11 +307,17 @@ def geometry_orientations(geom):
             lines = create_segments(p.exterior.coords[:-1])
             orientations.extend(line_orientations(lines))
     elif type(geom) == LineString:
-        lines = create_segments(geom.coords)
+        if geom.coords[0] == geom.coords[-1]:
+            lines = create_segments(geom.coords[:-1])
+        else:
+            lines = create_segments(geom.coords)
         orientations = line_orientations(lines)
     elif type(geom) == MultiLineString:
         for l in geom:
-            lines = create_segments(l.coords)
+            if l.coords[0] == l.coords[-1]:
+                lines = create_segments(l.coords[:-1])
+            else:
+                lines = create_segments(l.coords)
             orientations.extend(line_orientations(lines))
     elif type(geom) == LinearRing:
         lines = create_segments(geom.coords[:-1])
