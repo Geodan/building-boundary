@@ -5,8 +5,7 @@
 """
 
 import numpy as np
-from skimage.measure import LineModelND, ransac #import pcl
-
+from skimage.measure import LineModelND, ransac
 from .segment import BoundarySegment
 
 
@@ -24,13 +23,13 @@ def ransac_line_segmentation(points, distance):
 
     Returns
     -------
-    inliers : list of int
-        The indices of the inlier points
+    inliers : list of bool
+        True where point is an inlier.
     """
-    
-    model_robust, inliers = ransac(points, LineModelND, min_samples=2,
-                               residual_threshold=distance, max_trials=1000)
-    inliers = np.where(inliers == True)
+    _, inliers = ransac(points, LineModelND,
+                        min_samples=2,
+                        residual_threshold=distance,
+                        max_trials=1000)
     return inliers
 
 
