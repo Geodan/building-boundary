@@ -27,7 +27,8 @@ setup(
         'numpy',
         'scipy',
         'shapely',
-        'cgal-bindings'
+        'cgal-bindings',
+        'scikit-image'
     ],
     zip_safe=False
 )
