@@ -19,7 +19,7 @@ from .components.merge import merge_segments, merge_offset_lines
 from .components.intersect import compute_intersections
 from .components.regularize import (get_primary_orientations,
                                     regularize_segments,
-                                    footprint_orientations)
+                                    geometry_orientations)
 from .utils.angle import perpendicular
 
 
@@ -87,7 +87,7 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
         raise ValueError('Either k or alpha needs to be set.')
 
     if primary_orientations is None and footprint_geom is not None:
-        primary_orientations = footprint_orientations(loads(footprint_geom))
+        primary_orientations = geometry_orientations(loads(footprint_geom))
 
     bounding_box = compute_bounding_box(boundary_points,
                                         given_angles=primary_orientations,
