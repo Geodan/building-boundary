@@ -61,6 +61,13 @@ def extract_segment(points, indices, distance):
 
     if len(segment) > 1:
         segment = extend_segment(segment, points, indices, distance)
+    elif len(segment) == 1:
+        if segment[0] + 1 in indices:
+            segment.append(segment[0] + 1)
+            segment = extend_segment(segment, points, indices, distance)
+        elif segment[0] - 1 in indices:
+            segment.insert(0, segment[0] - 1)
+            segment = extend_segment(segment, points, indices, distance)
 
     return segment
 
