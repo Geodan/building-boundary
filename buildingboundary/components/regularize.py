@@ -310,14 +310,14 @@ def geometry_orientations(geom):
         if geom.coords[0] == geom.coords[-1]:
             lines = create_segments(geom.coords[:-1])
         else:
-            lines = create_segments(geom.coords)
+            lines = list(create_segments(geom.coords))[:-1]
         orientations = line_orientations(lines)
     elif type(geom) == MultiLineString:
         for l in geom:
             if l.coords[0] == l.coords[-1]:
                 lines = create_segments(l.coords[:-1])
             else:
-                lines = create_segments(l.coords)
+                lines = list(create_segments(l.coords))[:-1]
             orientations.extend(line_orientations(lines))
     elif type(geom) == LinearRing:
         lines = create_segments(geom.coords[:-1])
