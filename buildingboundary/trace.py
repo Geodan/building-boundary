@@ -129,6 +129,9 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
 
     vertices = merge_offset_lines(vertices,
                                   merge_angle,
-                                  max_merge_distance)
+                                  merge_distance)
+
+    if not Polygon(vertices).is_valid:
+        return np.array(bounding_box.exterior.coords)
 
     return vertices
