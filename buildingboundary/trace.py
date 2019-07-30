@@ -77,7 +77,7 @@ def trace_boundary(points, max_error, alpha=None, k=None,
         if type(shape) != Polygon:
             shape = max(shape, key=lambda s: s.area)
 
-            boundary_points = np.array(shape.exterior.coords)
+        boundary_points = np.array(shape.exterior.coords)
     elif k is not None:
         order = 'ccw'
         boundary_points = concave_hull.compute(points, k, True)
