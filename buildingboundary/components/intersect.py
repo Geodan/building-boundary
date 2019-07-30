@@ -76,8 +76,11 @@ def compute_intersections(segments, perp_dist_weight=3):
                 perp_intersect_dist = intersect_distance(perp_intersect,
                                                          segment1,
                                                          segment2)
-
-                if intersect_dist > perp_intersect_dist * perp_dist_weight:
+                if ((intersect_dist >
+                        perp_intersect_dist * perp_dist_weight) or
+                        (segment2.side_point_on_line(intersect) == -1 and
+                         perp_intersect_dist <
+                         intersect_dist * perp_dist_weight)):
                     intersections.append(segment1.end_points[1])
                     intersections.append(perp_intersect)
                 else:

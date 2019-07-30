@@ -7,6 +7,7 @@
 import math
 import numpy as np
 
+from ..utils import distance
 from ..utils.error import ThresholdError
 from ..utils.angle import min_angle_difference
 
@@ -238,9 +239,9 @@ class BoundarySegment(object):
 
         .. [1] https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
         """
-        distance = (abs(self.a * point[0] + self.b * point[1] + self.c) /
-                    math.sqrt(self.a**2 + self.b**2))
-        return distance
+        dist = (abs(self.a * point[0] + self.b * point[1] + self.c) /
+                math.sqrt(self.a**2 + self.b**2))
+        return dist
 
     def side_points_line(self):
         """
@@ -385,3 +386,19 @@ class BoundarySegment(object):
             return np.array([x, y])
         else:
             return np.array([])
+
+    def side_point_on_line(self, point):
+        a = self.end_points[0]
+        b = self.end_points[1]
+        c = point
+        if not np.isclose(np.cross(b-a, c-a), 0):
+            raise ValueError('Given point not on line.')
+        dist_ab = distance(a, b)
+        dist_ac = distance(a, c)
+        dist_bc = distance(b, c)
+        if np.isclose(dist_ac + dist_bc, dist_ab):
+            return 0
+        elif dist_ac < dist_bc:
+            return 1
+        elif dist_bc < dist_ac:
+            return -1
