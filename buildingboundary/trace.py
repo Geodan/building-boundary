@@ -15,7 +15,7 @@ from .components.alphashape import compute_alpha_shape
 from .components.boundingbox import compute_bounding_box
 from .components.segment import BoundarySegment
 from .components.segmentation import boundary_segmentation
-from .components.merge import merge_segments, merge_offset_lines
+from .components.merge import merge_offset_lines
 from .components.intersect import compute_intersections
 from .components.regularize import (get_primary_orientations,
                                     regularize_segments,
@@ -23,9 +23,9 @@ from .components.regularize import (get_primary_orientations,
 from .utils.angle import perpendicular
 
 
-def trace_boundary(points, max_error, merge_angle, alpha=None,
-                   k=None, min_area=0, max_rectangularity=0.97,
-                   max_merge_distance=None, num_points=None,
+def trace_boundary(points, max_error, alpha=None, k=None,
+                   min_area=0, max_rectangularity=0.97,
+                   merge_angle=None, merge_distance=None, num_points=None,
                    primary_orientations=None, perp_dist_weight=3,
                    max_error_invalid=None, inflate=False,
                    footprint_geom=None):
@@ -74,11 +74,10 @@ def trace_boundary(points, max_error, merge_angle, alpha=None,
             shape_ch = Polygon(boundary_points).buffer(0)
             shape = cascaded_union([shape, shape_ch])
 
-        if type(shape) == Polygon:
+        if type(shape) != Polygon:
+            shape = max(shape, key=lambda s: s.area)
+
             boundary_points = np.array(shape.exterior.coords)
-        else:
-            largest_polygon = max(shape, key=lambda s: s.area)
-            boundary_points = np.array(largest_polygon.exterior.coords)
     elif k is not None:
         order = 'ccw'
         boundary_points = concave_hull.compute(points, k, True)
