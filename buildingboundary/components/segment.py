@@ -61,6 +61,15 @@ class BoundarySegment(object):
     def intercept(self):
         return -self.c / self.b
 
+    @property
+    def line(self):
+        return (self.a, self.b, self.c)
+
+    @line.setter
+    def line(self, line):
+        self.a, self.b, self.c = line
+        self._create_line_segment()
+
     def fit_line(self, method='TLS', max_error=None):
         """
         Fit a line to the set of points of the object.
