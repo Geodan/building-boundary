@@ -13,12 +13,46 @@ from ..utils import create_segments, distance
 
 
 def line_angle(line):
+    """
+    Computes the angle of a line defined by two points.
+
+    Parameters
+    ----------
+    line : (2x2) array
+        The coordinates of the two points defining the line.
+
+    Returns
+    -------
+        Angle of the line in radians from
+        0 to pi (east to west counterclockwise)
+        0 to -pi (east to west clockwise)
+    """
     dx, dy = np.diff(line, axis=0)[0]
     angle = math.atan2(dy, dx)
     return angle
 
 
 def has_offset_line(line_idx, lines, merge_angle, max_distance):
+    """
+    Determines if a line has a subsequent line that is parallel and offset
+    by a small distance.
+
+    Parameters
+    ----------
+    line_idx : int
+        The index of the line.
+    lines : list of (2x2) array
+        The lines defined by the coordinates two points.
+    merge_angle : float
+        The angle difference two lines may have to be considered parallel.
+    max_distance : float
+        The maximum distance the offset can be for the lines to be merged.
+
+    Returns
+    -------
+     : bool
+        If the line has a subsequent parallel offset line.
+    """
     num_lines = len(lines)
 
     l2i = (line_idx + 1) % num_lines
@@ -42,6 +76,28 @@ def has_offset_line(line_idx, lines, merge_angle, max_distance):
 
 def subsequent_offset_lines(line_idx, lines, merge_angle,
                             max_distance, merged_lines):
+    """
+    Determines if subsequent lines are also parallel and offset by a small
+    distance.
+
+    Parameters
+    ----------
+    line_idx : int
+        The index of the line.
+    lines : list of (2x2) array
+        The lines defined by the coordinates two points.
+    merge_angle : float
+        The angle difference two lines may have to be considered parallel.
+    max_distance : float
+        The maximum distance the offset can be for the lines to be merged.
+    merged_lines : list of int
+        The indices of the lines that have already been merged.
+
+    Returns
+    -------
+    offset : int
+        How many lines can be skipped, and thus merged.
+    """
     num_lines = len(lines)
 
     offset = 2
@@ -67,10 +123,28 @@ def subsequent_offset_lines(line_idx, lines, merge_angle,
 
 def compute_new_vertex(line_1, line_2):
     """
-    https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line
+    Computes the intersection of two lines defined by two points.
+
+    Parameters
+    ----------
+    line_1 : (2x2) array-like
+        A line defined by the coordinates of two points.
+    line_2 : (2x2) array-like
+        Another line defined by the coordinates of two points.
+
+    Returns
+    -------
+    intersection : (1x2) tuple
+        The coordinates of the intersection.
+
+    .. [1] https://en.wikipedia.org/wiki/Line%E2%80%93line_intersection#Given_two_points_on_each_line  # noqa
     """
-    [[x1, y1], [x2, y2]] = line_1
-    [[x3, y3], [x4, y4]] = line_2
+    p1, p2 = line_1
+    x1, y1 = p1
+    x2, y2 = p2
+    p3, p4 = line_2
+    x3, y3 = p3
+    x4, y4 = p4
     px = (((x1 * y2 - y1 * x2) * (x3 - x4) - (x1 - x2) * (x3 * y4 - y3 * x4)) /
           ((x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)))
     py = (((x1 * y2 - y1 * x2) * (y3 - y4) - (y1 - y2) * (x3 * y4 - y3 * x4)) /
@@ -79,6 +153,24 @@ def compute_new_vertex(line_1, line_2):
 
 
 def merge_offset_lines(vertices, merge_angle, max_distance):
+    """
+    Merges lines which have subsequent lines that are parallel and offset by a
+    small distance.
+
+    Parameters
+    ----------
+    vertices : (Mx2) array
+        The coordinates of the vertices of the polygon.
+    merge_angle : float
+        The angle difference two lines may have to be considered parallel.
+    max_distance : float
+        The maximum distance the offset can be for the lines to be merged.
+
+    Returns
+    -------
+    vertices : (Mx2) array
+        The coordinates of the vertices of the resulting polygon.
+    """
     new_vertices = []
     merged_lines = []
 
