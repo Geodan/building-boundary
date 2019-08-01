@@ -136,10 +136,10 @@ class BoundarySegment(object):
                 raise NotImplementedError("Chosen method not available.")
 
             if max_error is not None:
-                residuals = self.residuals()
-                if residuals > max_error:
+                error = self.error()
+                if error > max_error:
                     raise ThresholdError("Could not fit a proper line. "
-                                         "Error: {}".format(residuals))
+                                         "Error: {}".format(error))
 
         self._create_line_segment()
 
@@ -199,7 +199,7 @@ class BoundarySegment(object):
             self.length = math.hypot(dx, dy)
             self.orientation = math.atan2(dy, dx)
 
-    def residuals(self):
+    def error(self):
         """
         Computes the max distance between the points and the fitted
         line.
@@ -352,13 +352,13 @@ class BoundarySegment(object):
                           len(self.points))
 
             if max_error is not None:
-                residuals = self.residuals()
-                if residuals > max_error:
+                error = self.error()
+                if error > max_error:
                     self.a = prev_a
                     self.b = prev_b
                     self.c = prev_c
                     raise ThresholdError("Could not fit a proper line. "
-                                         "Error: {}".format(residuals))
+                                         "Error: {}".format(error))
 
             self._create_line_segment()
 
