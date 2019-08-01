@@ -191,11 +191,13 @@ def merge_offset_lines(vertices, merge_angle, max_distance):
 
             if line_2_idx > line_1_idx:
                 merged_lines.extend(
-                    [i for i in range(line_1_idx, line_2_idx + 1)]
+                    [i for i in range(line_1_idx+1, line_2_idx+1)]
                 )
             else:
-                merged_lines.extend([i for i in range(line_1_idx, num_lines)])
-                merged_lines.extend([i for i in range(0, line_2_idx + 1)])
+                merged_lines.extend(
+                    [i for i in range(line_1_idx+1, num_lines)] +
+                    [i for i in range(0, line_2_idx+1)]
+                )
 
             new_vertex = compute_new_vertex(line_1, line_2)
             new_vertices.append(new_vertex)
