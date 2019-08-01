@@ -244,50 +244,6 @@ class BoundarySegment(object):
                 math.sqrt(self.a**2 + self.b**2))
         return dist
 
-    def side_points_line(self):
-        """
-        Determines on which side the points lie from the line segment.
-
-        Attributes
-        ----------
-        sides : (1xN) array
-            The side each point lies from the line segment. `0` is on the line,
-            `1` is on one side, `-1` on the other.
-
-        .. [1] https://stackoverflow.com/questions/1560492/how-to-tell-whether-a-point-is-to-the-right-or-left-side-of-a-line  # noqa
-        """
-        sides = ((self.end_points[1, 0] - self.end_points[0, 0]) *
-                 (self.points[:, 1] - self.end_points[0, 1]) -
-                 (self.end_points[1, 1] - self.end_points[0, 1]) *
-                 (self.points[:, 0] - self.end_points[0, 0]))
-        self.sides = np.sign(sides)
-
-    def inflate(self, order='cw'):
-        """
-        Moves the line segments to the outer most point of the object.
-        """
-        self.dist_points_line()
-        self.side_points_line()
-
-        if order == 'cw':
-            outside_points = np.where(self.sides == 1)[0]
-        elif order == 'ccw':
-            outside_points = np.where(self.sides == -1)[0]
-        else:
-            raise ValueError('Invalid value for order.'
-                             'Must be either \'cw\' or \'ccw\'.')
-
-        if len(outside_points) == 0:
-            return
-
-        furthest_outside_point_idx = np.argmax(self.distances[outside_points])
-        furthest_point_idx = outside_points[furthest_outside_point_idx]
-        furthest_point = self.points[furthest_point_idx]
-        point_on_line = self._point_on_line(furthest_point)
-        dx, dy = furthest_point - point_on_line
-        self.c = self.c - self.a * dx - self.b * dy
-        self._create_line_segment()
-
     def target_orientation(self, primary_orientations):
         """
         Determines the which of the given primary orientations is closest

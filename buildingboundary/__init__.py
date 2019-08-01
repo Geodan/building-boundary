@@ -6,6 +6,7 @@ from .components import segmentation
 from .components import alphashape
 from .components import boundingbox
 from .components import merge
+from .components import inflate
 from .utils import angle
 
 __all__ = [
@@ -17,5 +18,6 @@ __all__ = [
     'alphashape',
     'boundingbox',
     'merge',
+    'inflate',
     'angle'
 ]

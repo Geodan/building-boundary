@@ -20,6 +20,7 @@ from .components.intersect import compute_intersections
 from .components.regularize import (get_primary_orientations,
                                     regularize_segments,
                                     geometry_orientations)
+from .components.inflate import inflate_polygon
 from .utils.angle import perpendicular
 
 
@@ -66,7 +67,6 @@ def trace_boundary(points, max_error, alpha=None, k=None,
         The vertices of the computed boundary line
     """
     if alpha is not None:
-        order = 'cw'
         shape = compute_alpha_shape(points, alpha)
 
         if k is not None:
@@ -79,7 +79,6 @@ def trace_boundary(points, max_error, alpha=None, k=None,
 
         boundary_points = np.array(shape.exterior.coords)
     elif k is not None:
-        order = 'ccw'
         boundary_points = concave_hull.compute(points, k, True)
         shape = Polygon(boundary_points).buffer(0)
     else:
@@ -117,16 +116,15 @@ def trace_boundary(points, max_error, alpha=None, k=None,
                                             primary_orientations,
                                             max_error=max_error_invalid)
 
-    if inflate:
-        for s in boundary_segments:
-            s.inflate(order=order)
-
     vertices = compute_intersections(boundary_segments,
                                      perp_dist_weight=perp_dist_weight)
 
     vertices = merge_offset_lines(vertices,
                                   merge_angle,
                                   merge_distance)
+
+    if inflate:
+        vertices = inflate_polygon(vertices, boundary_points)
 
     if not Polygon(vertices).is_valid:
         return np.array(bounding_box.exterior.coords)
