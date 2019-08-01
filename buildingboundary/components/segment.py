@@ -55,6 +55,7 @@ class BoundarySegment(object):
             X and Y coordinates of points.
         """
         self.points = points
+        self.fit_line()
 
     def slope(self):
         return -self.a / self.b

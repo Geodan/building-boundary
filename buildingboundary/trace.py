@@ -105,8 +105,6 @@ def trace_boundary(points, max_error, alpha=None, k=None,
         return np.array(bounding_box.exterior.coords)
 
     boundary_segments = [BoundarySegment(s) for s in segments]
-    for s in boundary_segments:
-        s.fit_line(method='TLS')
 
     if primary_orientations is None or len(primary_orientations) == 0:
         primary_orientations = get_primary_orientations(boundary_segments,
