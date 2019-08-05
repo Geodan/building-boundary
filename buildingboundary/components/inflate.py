@@ -8,6 +8,7 @@ import numpy as np
 from shapely.geometry import Polygon, Point
 from shapely.ops import nearest_points
 
+from .segment import BoundarySegment
 from ..utils import create_segments, distance
 
 
@@ -38,6 +39,7 @@ def nearest_edges(point_on_polygon, edges):
 def inflate_polygon(vertices, points):
     # Find points not enclosed in polygon
     new_vertices = vertices.copy()
+    n_vertices = len(vertices)
     polygon = Polygon(vertices)
     edges = create_segments(new_vertices)
     outliers_mask = [not polygon.contains(Point(p)) for p in points]
@@ -53,17 +55,18 @@ def inflate_polygon(vertices, points):
         point_on_polygon, _ = nearest_points(polygon, Point(p))
         point_on_polygon = np.array(point_on_polygon)
         nearest = nearest_edges(point_on_polygon, edges)
-        if len(nearest) == 1:
-            i = nearest[0]
+        for i in nearest:
             # Move polygon edge out such that point is enclosed
             delta = p - point_on_polygon
-            new_vertices[i] += delta
-            new_vertices[(i+1) % len(new_vertices)] += delta
-        else:
-            # Ignore if closest point is polygon vertex
-            outliers_indices = np.where(outliers_mask)[0]
-            outlier_idx = outliers_indices[np.argmax(distances)]
-            points = np.delete(points, outlier_idx, axis=0)
+            p1 = new_vertices[i] + delta
+            p2 = new_vertices[(i+1) % n_vertices] + delta
+            l1 = BoundarySegment(np.array([new_vertices[(i-1) % n_vertices],
+                                           new_vertices[i]]))
+            l2 = BoundarySegment(np.array([p1, p2]))
+            l3 = BoundarySegment(np.array([new_vertices[(i+1) % n_vertices],
+                                           new_vertices[(i+2) % n_vertices]]))
+            new_vertices[i] = l2.line_intersect(l1.line)
+            new_vertices[(i+1) % n_vertices] = l2.line_intersect(l3.line)
 
         # Update polygon
         polygon = Polygon(new_vertices)
