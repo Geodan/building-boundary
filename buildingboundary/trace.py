@@ -5,7 +5,7 @@
 """
 
 import numpy as np
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
 from shapely.wkt import loads
 from shapely.ops import cascaded_union
 
@@ -25,7 +25,6 @@ from .utils.angle import perpendicular
 
 
 def trace_boundary(points, max_error, alpha=None, k=None,
-                   min_area=0, max_rectangularity=0.97,
                    merge_angle=None, merge_distance=None, num_points=None,
                    primary_orientations=None, perp_dist_weight=3,
                    max_error_invalid=None, inflate=False,
@@ -91,11 +90,9 @@ def trace_boundary(points, max_error, alpha=None, k=None,
                                         given_angles=primary_orientations,
                                         max_error=max_error_invalid)
 
-    if shape.area < min_area:
-        return np.array(bounding_box.exterior.coords)
-
-    rectangularity = shape.area / bounding_box.area
-    if rectangularity > max_rectangularity:
+    distances = [bounding_box.exterior.distance(Point(p)) for
+                 p in boundary_points]
+    if max(distances) < max_error_invalid:
         return np.array(bounding_box.exterior.coords)
 
     segments = boundary_segmentation(boundary_points, max_error)
