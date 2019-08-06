@@ -7,7 +7,7 @@ def read(filename):
 
 
 setup(
-    name="buildingboundary",
+    name="building-boundary",
     version="0.3.0",
     author="Chris Lucas",
     author_email="chris.lucas@geodan.nl",

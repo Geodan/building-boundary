@@ -12,7 +12,7 @@ from shapely.geometry import (
 )
 from shapely import wkt
 
-from buildingboundary import utils
+from building_boundary import utils
 
 
 def line_orientations(lines):

@@ -1,4 +1,4 @@
-from .buildingboundary import trace_boundary
+from .building_boundary import trace_boundary
 from .shapes import alphashape
 from .shapes import boundingbox
 from .core import intersect
