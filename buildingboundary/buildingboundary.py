@@ -6,59 +6,57 @@
 
 import numpy as np
 from shapely.geometry import Polygon, Point
-from shapely.wkt import loads
 from shapely.ops import cascaded_union
 
 import concave_hull
 
-from .components.alphashape import compute_alpha_shape
-from .components.boundingbox import compute_bounding_box
+from .shapes.alphashape import compute_alpha_shape
+from .shapes.boundingbox import compute_bounding_box
 from .components.segment import BoundarySegment
 from .components.segmentation import boundary_segmentation
 from .components.merge import merge_segments
 from .components.intersect import compute_intersections
 from .components.regularize import (get_primary_orientations,
-                                    regularize_segments,
-                                    geometry_orientations)
+                                    regularize_segments)
 from .components.inflate import inflate_polygon
-from .utils.angle import perpendicular
+from . import utils
 
 
 def trace_boundary(points, max_error, alpha=None, k=None,
                    num_points=None, angle_epsilon=0.05, merge_distance=None,
                    primary_orientations=None, perp_dist_weight=3,
-                   max_error_invalid=None, inflate=False,
-                   footprint_geom=None):
+                   max_error_invalid=None, inflate=False):
     """
     Trace the boundary of a set of 2D points.
 
     Parameters
     ----------
     points : (Mx2) array
-        The coordinates of the points
+        The coordinates of the points.
+    max_error : float
+        The maximum error (distance) the points make with the fitted
+        line.
+
     k : int
         The amount of nearest neighbors used in the concave hull algorithm
-    max_error : float
-        The maximum average error (distance) the points make with the fitted
-        line
+
     merge_angle : float
-        The angle (in radians) difference within two segments will be merged
+        The angle (in radians) difference within two segments can be merged
+
     num_points : int, optional
         The number of points a segment needs to be supported by to be
         considered a primary orientation. Will be ignored if primary
         orientations are set manually.
-    max_intersect_distance : float, optional
-        The maximum distance an found intersection can be from the segments.
-    alignment : float, optional
-        If set segments will be aligned (their intercept be set equal by
-        averaging) if the difference between their x-axis intercepts is within
-        this number.
+
+
     primary_orientations : list of floats, optional
         The desired primary orientations (in radians) of the boundary. If set
         manually here these orientations will not be computed.
+
     inflate : bool
         If set to true the fit lines will be moved to the furthest outside
         point.
+
 
     Returns
     -------
@@ -83,9 +81,6 @@ def trace_boundary(points, max_error, alpha=None, k=None,
     else:
         raise ValueError('Either k or alpha needs to be set.')
 
-    if primary_orientations is None and footprint_geom is not None:
-        primary_orientations = geometry_orientations(loads(footprint_geom))
-
     bounding_box = compute_bounding_box(boundary_points,
                                         given_angles=primary_orientations,
                                         max_error=max_error_invalid)
@@ -107,7 +102,9 @@ def trace_boundary(points, max_error, alpha=None, k=None,
                                                         num_points)
 
     if len(primary_orientations) == 1:
-        primary_orientations.append(perpendicular(primary_orientations[0]))
+        primary_orientations.append(
+            utils.angle.perpendicular(primary_orientations[0])
+        )
 
     boundary_segments = regularize_segments(boundary_segments,
                                             primary_orientations,

@@ -7,9 +7,7 @@
 import math
 import numpy as np
 
-from ..utils import distance
-from ..utils.error import ThresholdError
-from ..utils.angle import min_angle_difference
+from .. import utils
 
 
 def PCA(points):
@@ -138,8 +136,9 @@ class BoundarySegment(object):
             if max_error is not None:
                 error = self.error()
                 if error > max_error:
-                    raise ThresholdError("Could not fit a proper line. "
-                                         "Error: {}".format(error))
+                    raise utils.error.ThresholdError(
+                        "Could not fit a proper line. Error: {}".format(error)
+                    )
 
         self._create_line_segment()
 
@@ -259,7 +258,7 @@ class BoundarySegment(object):
         The primary orientation closest to the orientation of this line
         segment.
         """
-        po_diff = [min_angle_difference(self.orientation, o) for
+        po_diff = [utils.angle.min_angle_difference(self.orientation, o) for
                    o in primary_orientations]
         min_po_diff = min(po_diff)
         return primary_orientations[po_diff.index(min_po_diff)]
@@ -313,8 +312,9 @@ class BoundarySegment(object):
                     self.a = prev_a
                     self.b = prev_b
                     self.c = prev_c
-                    raise ThresholdError("Could not fit a proper line. "
-                                         "Error: {}".format(error))
+                    raise utils.error.ThresholdError(
+                        "Could not fit a proper line. Error: {}".format(error)
+                    )
 
             self._create_line_segment()
 
@@ -325,7 +325,7 @@ class BoundarySegment(object):
         Parameters
         ----------
         line : (1x3) array-like
-            The a,b, and c coefficients (ax + by + c = 0) of a line.
+            The a, b, and c coefficients (ax + by + c = 0) of a line.
 
         Returns
         -------
@@ -350,9 +350,9 @@ class BoundarySegment(object):
         c = point
         if not np.isclose(np.cross(b-a, c-a), 0):
             raise ValueError('Given point not on line.')
-        dist_ab = distance(a, b)
-        dist_ac = distance(a, c)
-        dist_bc = distance(b, c)
+        dist_ab = utils.geometry.distance(a, b)
+        dist_ac = utils.geometry.distance(a, c)
+        dist_bc = utils.geometry.distance(b, c)
         if np.isclose(dist_ac + dist_bc, dist_ab):
             return 0
         elif dist_ac < dist_bc:

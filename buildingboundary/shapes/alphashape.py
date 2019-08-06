@@ -66,15 +66,6 @@ def compute_alpha_shape(points, alpha):
         polygons.append(polygon)
 
     polygons = [Polygon(p) for p in polygons if len(p) > 2]
-#    largest_polygon = max(polygons, key=lambda p: p.area)
-#    alpha_shapes = [{'exterior': largest_polygon, 'interiors': []}]
-#
-#    for p in polygons:
-#        for a in alpha_shapes:
-#            if a['exterior'] != p and a['exterior'].contains(p):
-#                a['interiors'].append(p)
-#            elif a['exterior'] != p:
-#                alpha_shape.append({'exterior': p, 'interiors': []})
 
     alpha_shape = MultiPolygon(polygons).buffer(0)
 

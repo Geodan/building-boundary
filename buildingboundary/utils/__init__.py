@@ -4,30 +4,14 @@
 @author: Chris Lucas
 """
 
-import math
 import numpy as np
 
-
-def distance(p1, p2):
-    """
-    The euclidean distance between two points.
-
-    Parameters
-    ----------
-    p1 : list or array
-        A point in 2D space.
-    p2 : list or array
-        A point in 2D space.
-
-    Returns
-    -------
-    distance : float
-        The euclidean distance between the two points.
-    """
-    return math.hypot(*(p1-p2))
+from . import angle
+from . import geometry
+from . import error
 
 
-def create_segments(iterable):
+def create_pairs(iterable):
     """
     Creates pairs in sequence between the elements of the
     iterable.
@@ -39,13 +23,21 @@ def create_segments(iterable):
 
     Returns
     -------
-    segments : zip
-        Iterator which contains pairs of points that define
-        the segments.
+    pairs : zip
+        Iterator which contain the pairs.
 
     Examples
     --------
-    >>> list(create_segments([3, 5, 1, 9, 8]))
+    >>> list(create_pairs([3, 5, 1, 9, 8]))
     [(3, 5), (5, 1), (1, 9), (9, 8), (8, 3)]
     """
     return zip(np.array(iterable), np.roll(iterable, -1, axis=0))
+
+
+__all__ = [
+    'angle',
+    'geometry',
+    'error',
+    'orientations',
+    'create_pairs'
+]

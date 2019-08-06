@@ -8,9 +8,7 @@ import bisect
 
 import numpy as np
 
-from ..utils.angle import angle_difference
-from ..utils.error import ThresholdError
-from ..utils import create_segments, distance
+from .. import utils
 from .segment import BoundarySegment
 from .intersect import perpedicular_line_intersect
 
@@ -32,8 +30,8 @@ def find_pivots(orientations, angle):
     -------
     pivot_indices : list of int
     """
-    ori_diff = np.fromiter((angle_difference(a1, a2) for
-                            a1, a2 in create_segments(orientations)),
+    ori_diff = np.fromiter((utils.angle.angle_difference(a1, a2) for
+                            a1, a2 in utils.create_pairs(orientations)),
                            orientations.dtype)
     pivots_bool = ori_diff > angle
     pivots_idx = list(np.where(pivots_bool)[0] + 1)
@@ -90,12 +88,12 @@ def get_segments_between_pivots(segments, pivots):
 
 def parallel_distance(segment1, segment2):
     intersect = perpedicular_line_intersect(segment1, segment2)
-    return distance(segment1.end_points[1], intersect)
+    return utils.geometry.distance(segment1.end_points[1], intersect)
 
 
 def check_distance(segments, pivots, max_distance):
     distances = np.array([parallel_distance(pair[0], pair[1])
-                         for pair in create_segments(segments)])
+                         for pair in utils.create_pairs(segments)])
     too_far = np.where(distances > max_distance)[0] + 1
     if len(too_far) > 0:
         too_far[-1] = 0 if too_far[-1] > len(segments) - 1 else too_far[-1]
@@ -129,7 +127,7 @@ def merge_segments(segments, angle_epsilon=0.05,
     if max_distance is not None:
         pivots = check_distance(segments, pivots, max_distance)
 
-    for pivot_segment in create_segments(pivots):
+    for pivot_segment in utils.create_pairs(pivots):
         try:
             points = get_points_between_pivots(
                 segments,
@@ -144,7 +142,7 @@ def merge_segments(segments, angle_epsilon=0.05,
             orientation = longest_segment.orientation
             merged_segment.regularize(orientation, max_error=max_error)
             new_segments.append(merged_segment)
-        except ThresholdError:
+        except utils.error.ThresholdError:
             new_segments.extend(
                 get_segments_between_pivots(segments, pivot_segment)
             )

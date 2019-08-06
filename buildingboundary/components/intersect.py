@@ -6,42 +6,18 @@
 
 import numpy as np
 
-from ..utils import distance
-
-
-def perpedicular_line(line, p):
-    """
-    Returns a perpendicular line to a line at a point.
-
-    Parameters
-    ----------
-    line : (1x3) array-like
-        The a, b, and c coefficients (ax + by + c = 0) of a line.
-    p : (1x2) array-like
-        The coordinates of a point on the line.
-
-    Returns
-    -------
-    line : (1x3) array-like
-        The a, b, and c coefficients (ax + by + c = 0) of the line
-        perpendicular to the input line at point p.
-    """
-    a, b, c = line
-    pa = b
-    pb = -a
-    pc = -(p[0] * b - p[1] * a)
-    return [pa, pb, pc]
+from .. import utils
 
 
 def perpedicular_line_intersect(segment1, segment2):
-    perp_line = perpedicular_line(segment1.line,
-                                  segment1.end_points[1])
+    perp_line = utils.geometry.perpedicular_line(segment1.line,
+                                                 segment1.end_points[1])
     return segment2.line_intersect(perp_line)
 
 
 def intersect_distance(intersect, segment1, segment2):
-    return min(distance(segment1.end_points[1], intersect),
-               distance(segment2.end_points[0], intersect))
+    return min(utils.geometry.distance(segment1.end_points[1], intersect),
+               utils.geometry.distance(segment2.end_points[0], intersect))
 
 
 def compute_intersections(segments, perp_dist_weight=3):

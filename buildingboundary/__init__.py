@@ -1,13 +1,15 @@
-from .trace import trace_boundary
+from .buildingboundary import trace_boundary
+from .shapes import alphashape
+from .shapes import boundingbox
 from .components import intersect
 from .components import regularize
 from .components import segment
 from .components import segmentation
-from .components import alphashape
-from .components import boundingbox
 from .components import merge
 from .components import inflate
-from .utils import angle
+from . import utils
+from . import footprint
+
 
 __all__ = [
     'trace_boundary',
@@ -19,5 +21,6 @@ __all__ = [
     'boundingbox',
     'merge',
     'inflate',
-    'angle'
+    'utils',
+    'footprint'
 ]

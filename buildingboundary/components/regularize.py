@@ -7,13 +7,8 @@
 import math
 
 import numpy as np
-from shapely.geometry import (
-    Polygon, MultiPolygon, LineString, MultiLineString, LinearRing
-)
 
-from ..utils.angle import min_angle_difference, perpendicular
-from ..utils.error import ThresholdError
-from ..utils import create_segments
+from .. import utils
 
 
 def get_primary_segments(segments, num_points):
@@ -106,7 +101,7 @@ def compute_primary_orientations(primary_segments, angle_epsilon=0.1):
         a1 = s.orientation
         for o in orientations:
             a2 = o['orientation']
-            angle_diff = min_angle_difference(a1, a2)
+            angle_diff = utils.angle.min_angle_difference(a1, a2)
             if angle_diff < angle_epsilon:
                 if len(s.points) > o['size']:
                     o['size'] = len(s.points)
@@ -142,7 +137,7 @@ def check_perpendicular(primary_orientations, angle_epsilon=0.1):
     exists.
     """
     main_orientation = primary_orientations[0]
-    diffs = [min_angle_difference(main_orientation, a)
+    diffs = [utils.angle.min_angle_difference(main_orientation, a)
              for a in primary_orientations[1:]]
     diffs_perp = np.array(diffs) - math.pi/2
     return min(np.abs(diffs_perp)) < angle_epsilon
@@ -172,13 +167,17 @@ def add_perpendicular(primary_orientations, angle_epsilon=0.1):
     # if only one primary orientation is found, add an orientation
     # perpendicular to it.
     if len(primary_orientations) == 1:
-        primary_orientations.append(perpendicular(main_orientation))
+        primary_orientations.append(
+            utils.angle.perpendicular(main_orientation)
+        )
     else:
         # add a perpendicular orientation if no approximate perpendicular
         # orientations were found
         if not check_perpendicular(primary_orientations,
                                    angle_epsilon=angle_epsilon):
-            primary_orientations.append(perpendicular(main_orientation))
+            primary_orientations.append(
+                utils.angle.perpendicular(main_orientation)
+            )
 
     return primary_orientations
 
@@ -250,80 +249,7 @@ def regularize_segments(segments, primary_orientations, max_error=None):
         target_orientation = s.target_orientation(primary_orientations)
         try:
             s.regularize(target_orientation, max_error=max_error)
-        except ThresholdError:
+        except utils.error.ThresholdError:
             pass
 
     return segments
-
-
-def line_orientations(lines):
-    """
-    Computes the orientations of the lines.
-
-    Parameters
-    ----------
-    lines : list of (2x2) array
-        The lines defined by the coordinates two points.
-
-    Returns
-    -------
-    orientations : list of float
-        The orientations of the lines in radians from
-        0 to pi (east to west counterclockwise)
-        0 to -pi (east to west clockwise)
-    """
-    orientations = []
-    for l in lines:
-        dx, dy = l[0] - l[1]
-        orientation = math.atan2(dy, dx)
-        if not any([np.isclose(orientation, o) for o in orientations]):
-            orientations.append(orientation)
-    return orientations
-
-
-def geometry_orientations(geom):
-    """
-    Computes the orientations of the lines of a geometry (Polygon,
-    MultiPolygon, LineString, MultiLineString, or LinearRing).
-
-    Parameters
-    ----------
-    geom : Polygon, MultiPolygon, LineString, MultiLineString, or LinearRing
-        The geometry
-
-    Returns
-    -------
-    orientations : list of float
-        The orientations of the lines of the geometry in radians from
-        0 to pi (east to west counterclockwise)
-        0 to -pi (east to west clockwise)
-    """
-    orientations = []
-    if type(geom) == Polygon:
-        lines = create_segments(geom.exterior.coords[:-1])
-        orientations = line_orientations(lines)
-    elif type(geom) == MultiPolygon:
-        for p in geom:
-            lines = create_segments(p.exterior.coords[:-1])
-            orientations.extend(line_orientations(lines))
-    elif type(geom) == LineString:
-        if geom.coords[0] == geom.coords[-1]:
-            lines = create_segments(geom.coords[:-1])
-        else:
-            lines = list(create_segments(geom.coords))[:-1]
-        orientations = line_orientations(lines)
-    elif type(geom) == MultiLineString:
-        for l in geom:
-            if l.coords[0] == l.coords[-1]:
-                lines = create_segments(l.coords[:-1])
-            else:
-                lines = list(create_segments(l.coords))[:-1]
-            orientations.extend(line_orientations(lines))
-    elif type(geom) == LinearRing:
-        lines = create_segments(geom.coords[:-1])
-        orientations = line_orientations(lines)
-    else:
-        raise TypeError('Invalid geometry type. Expects Polygon, '
-                        'MultiPolygon, LineString, MultiLineString, '
-                        'or LinearRing.')
-    return orientations

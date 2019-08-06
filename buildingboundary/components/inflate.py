@@ -9,7 +9,7 @@ from shapely.geometry import Polygon, Point
 from shapely.ops import nearest_points
 
 from .segment import BoundarySegment
-from ..utils import create_segments, distance
+from .. import utils
 
 
 def point_on_line_segment(line_segment, point):
@@ -19,9 +19,9 @@ def point_on_line_segment(line_segment, point):
     if not np.isclose(np.cross(b-a, p-a), 0):
         return False
     else:
-        dist_ab = distance(a, b)
-        dist_ap = distance(a, p)
-        dist_bp = distance(b, p)
+        dist_ab = utils.geometry.distance(a, b)
+        dist_ap = utils.geometry.distance(a, p)
+        dist_bp = utils.geometry.distance(b, p)
         if np.isclose(dist_ap + dist_bp, dist_ab):
             return True
         else:
@@ -41,7 +41,7 @@ def inflate_polygon(vertices, points):
     new_vertices = vertices.copy()
     n_vertices = len(vertices)
     polygon = Polygon(vertices)
-    edges = create_segments(new_vertices)
+    edges = utils.create_pairs(new_vertices)
     outliers_mask = [not polygon.contains(Point(p)) for p in points]
     outliers = points[outliers_mask]
 
@@ -70,7 +70,7 @@ def inflate_polygon(vertices, points):
 
         # Update polygon
         polygon = Polygon(new_vertices)
-        edges = create_segments(new_vertices)
+        edges = utils.create_pairs(new_vertices)
         outliers_mask = [not polygon.contains(Point(p)) for p in points]
         outliers = points[outliers_mask]
 
