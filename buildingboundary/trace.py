@@ -15,7 +15,7 @@ from .components.alphashape import compute_alpha_shape
 from .components.boundingbox import compute_bounding_box
 from .components.segment import BoundarySegment
 from .components.segmentation import boundary_segmentation
-from .components.merge import merge_offset_lines
+from .components.merge import merge_segments
 from .components.intersect import compute_intersections
 from .components.regularize import (get_primary_orientations,
                                     regularize_segments,
@@ -25,7 +25,7 @@ from .utils.angle import perpendicular
 
 
 def trace_boundary(points, max_error, alpha=None, k=None,
-                   merge_angle=None, merge_distance=None, num_points=None,
+                   num_points=None, angle_epsilon=0.05, merge_distance=None,
                    primary_orientations=None, perp_dist_weight=3,
                    max_error_invalid=None, inflate=False,
                    footprint_geom=None):
@@ -113,12 +113,13 @@ def trace_boundary(points, max_error, alpha=None, k=None,
                                             primary_orientations,
                                             max_error=max_error_invalid)
 
+    boundary_segments = merge_segments(boundary_segments,
+                                       angle_epsilon=angle_epsilon,
+                                       max_distance=merge_distance,
+                                       max_error=max_error_invalid)
+
     vertices = compute_intersections(boundary_segments,
                                      perp_dist_weight=perp_dist_weight)
-
-    vertices = merge_offset_lines(vertices,
-                                  merge_angle,
-                                  merge_distance)
 
     if inflate:
         vertices = inflate_polygon(vertices, boundary_points)
