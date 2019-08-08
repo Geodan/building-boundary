@@ -44,8 +44,9 @@ def inflate_polygon(vertices, points):
     edges = utils.create_pairs(new_vertices)
     outliers_mask = [not polygon.contains(Point(p)) for p in points]
     outliers = points[outliers_mask]
+    n_outliers = len(outliers)
 
-    while len(outliers) > 0:
+    while n_outliers > 0:
         # Get furthest point
         distances = [polygon.distance(Point(p)) for p in outliers]
         if np.isclose(max(distances), 0):
@@ -73,5 +74,11 @@ def inflate_polygon(vertices, points):
         edges = utils.create_pairs(new_vertices)
         outliers_mask = [not polygon.contains(Point(p)) for p in points]
         outliers = points[outliers_mask]
+        if len(outliers) >= n_outliers:
+            break
+        n_outliers = len(outliers)
 
-    return new_vertices
+    if not Polygon(new_vertices).is_valid and Polygon(vertices).is_valid:
+        return vertices
+    else:
+        return new_vertices
