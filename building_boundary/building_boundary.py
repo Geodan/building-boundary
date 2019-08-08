@@ -98,7 +98,7 @@ def trace_boundary(points, ransac_threshold, max_error=None, alpha=None,
 
     distances = [bounding_box.exterior.distance(Point(p)) for
                  p in boundary_points]
-    if max(distances) < max_error:
+    if max_error is not None and max(distances) < max_error:
         return np.array(bounding_box.exterior.coords)
 
     segments = boundary_segmentation(boundary_points, ransac_threshold)
@@ -109,8 +109,11 @@ def trace_boundary(points, ransac_threshold, max_error=None, alpha=None,
     boundary_segments = [BoundarySegment(s) for s in segments]
 
     if primary_orientations is None or len(primary_orientations) == 0:
-        primary_orientations = get_primary_orientations(boundary_segments,
-                                                        num_points)
+        primary_orientations = get_primary_orientations(
+            boundary_segments,
+            num_points,
+            angle_epsilon=angle_epsilon
+        )
 
     if len(primary_orientations) == 1:
         primary_orientations.append(
