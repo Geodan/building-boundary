@@ -37,43 +37,56 @@ def nearest_edges(point_on_polygon, edges):
 
 
 def inflate_polygon(vertices, points):
-    # Find points not enclosed in polygon
     new_vertices = vertices.copy()
+    points_geom = [Point(p) for p in points]
     n_vertices = len(vertices)
     polygon = Polygon(vertices)
     edges = utils.create_pairs(new_vertices)
-    outliers_mask = [not polygon.contains(Point(p)) for p in points]
+
+    # Find points not enclosed in polygon
+    distances = np.array([polygon.distance(p) for p in points_geom])
+    outliers_mask = np.invert(np.isclose(distances, 0))
     outliers = points[outliers_mask]
+    distances = distances[outliers_mask]
     n_outliers = len(outliers)
 
     while n_outliers > 0:
-        # Get furthest point
-        distances = [polygon.distance(Point(p)) for p in outliers]
-        if np.isclose(max(distances), 0):
-            break
         p = outliers[np.argmax(distances)]
+
         # Find nearest polygon edge to point
         point_on_polygon, _ = nearest_points(polygon, Point(p))
         point_on_polygon = np.array(point_on_polygon)
         nearest = nearest_edges(point_on_polygon, edges)
+
+        # Move polygon edge out such that point is enclosed
         for i in nearest:
-            # Move polygon edge out such that point is enclosed
             delta = p - point_on_polygon
             p1 = new_vertices[i] + delta
             p2 = new_vertices[(i+1) % n_vertices] + delta
+            # Lines
             l1 = BoundarySegment(np.array([new_vertices[(i-1) % n_vertices],
                                            new_vertices[i]]))
             l2 = BoundarySegment(np.array([p1, p2]))
             l3 = BoundarySegment(np.array([new_vertices[(i+1) % n_vertices],
                                            new_vertices[(i+2) % n_vertices]]))
-            new_vertices[i] = l2.line_intersect(l1.line)
-            new_vertices[(i+1) % n_vertices] = l2.line_intersect(l3.line)
+            # Intersections
+            i1 = l2.line_intersect(l1.line)
+            i2 = l2.line_intersect(l3.line)
 
-        # Update polygon
-        polygon = Polygon(new_vertices)
-        edges = utils.create_pairs(new_vertices)
-        outliers_mask = [not polygon.contains(Point(p)) for p in points]
+            new_vertices[i] = i1
+            new_vertices[(i+1) % n_vertices] = i2
+
+            # Update polygon
+            polygon = Polygon(new_vertices)
+            edges = utils.create_pairs(new_vertices)
+            point_on_polygon, _ = nearest_points(polygon, Point(p))
+            point_on_polygon = np.array(point_on_polygon)
+
+        distances = np.array([polygon.distance(p) for p in points_geom])
+        outliers_mask = np.invert(np.isclose(distances, 0))
         outliers = points[outliers_mask]
+        distances = distances[outliers_mask]
+
         if len(outliers) >= n_outliers:
             break
         n_outliers = len(outliers)
