@@ -72,7 +72,7 @@ def sort_orientations(orientations):
     """
     unsorted_orientations = [o['orientation'] for o in orientations]
     lengths = [o['size'] for o in orientations]
-    sort = np.argsort(lengths)
+    sort = np.argsort(lengths)[::-1]
     sorted_orientations = np.array(unsorted_orientations)[sort].tolist()
     return sorted_orientations
 
@@ -116,7 +116,7 @@ def compute_primary_orientations(primary_segments, angle_epsilon=0.1):
     return primary_orientations
 
 
-def check_perpendicular(primary_orientations, angle_epsilon=0.1):
+def check_perpendicular(primary_orientations, angle_epsilon=0.05):
     """
     Checks if a perpendicular orientation to the main orientation
     exists.
@@ -143,7 +143,7 @@ def check_perpendicular(primary_orientations, angle_epsilon=0.1):
     return min(np.abs(diffs_perp)) < angle_epsilon
 
 
-def add_perpendicular(primary_orientations, angle_epsilon=0.1):
+def add_perpendicular(primary_orientations, angle_epsilon=0.05):
     """
     Adds an orientation perpendicular to the main orientation if no
     approximate perpendicular orientation is present in the primary
@@ -183,7 +183,7 @@ def add_perpendicular(primary_orientations, angle_epsilon=0.1):
 
 
 def get_primary_orientations(segments, num_points=None,
-                             angle_epsilon=0.1):
+                             angle_epsilon=0.05):
     """
     Computes the primary orientations of the building by checking the
     number of points it is supported by. If multiple orientations are
