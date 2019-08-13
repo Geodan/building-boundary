@@ -78,6 +78,13 @@ def inflate_polygon(vertices, points):
 
             # Update polygon
             polygon = Polygon(new_vertices)
+
+            if not polygon.is_valid:
+                polygon = polygon.buffer(0)
+                new_vertices = np.array(polygon.exterior.coords)
+                n_vertices = len(new_vertices)
+                n_outliers = float('inf')
+
             edges = utils.create_pairs(new_vertices)
             point_on_polygon, _ = nearest_points(polygon, Point(p))
             point_on_polygon = np.array(point_on_polygon)
