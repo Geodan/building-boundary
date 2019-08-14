@@ -71,12 +71,12 @@ def trace_boundary(points, ransac_threshold, max_error=None, alpha=None,
         The vertices of the computed boundary line
     """
     shape = compute_shape(points, alpha=alpha, k=k)
-        boundary_points = np.array(shape.exterior.coords)
+    boundary_points = np.array(shape.exterior.coords)
 
     basic_shape, dist_basic_shape = fit_basic_shape(
         shape,
         max_error,
-                                        given_angles=primary_orientations,
+        given_angles=primary_orientations,
     )
     if max_error is not None and dist_basic_shape < max_error*2:
         return np.array(basic_shape.exterior.coords)
@@ -118,7 +118,12 @@ def trace_boundary(points, ransac_threshold, max_error=None, alpha=None,
             remaining_points = np.vstack((remaining_points, s.points))
         vertices = inflate_polygon(vertices, remaining_points)
 
-    if not Polygon(vertices).is_valid:
-        return np.array(bounding_box.exterior.coords)
+    polygon = Polygon(vertices)
+    if not polygon.is_valid:
+        return np.array(basic_shape.exterior.coords)
+
+    if (len(boundary_segments) == len(basic_shape.exterior.coords)-1 and
+            basic_shape.area < polygon.area):
+        return np.array(basic_shape.exterior.coords)
 
     return vertices
