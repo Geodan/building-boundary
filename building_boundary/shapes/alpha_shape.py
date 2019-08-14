@@ -22,7 +22,7 @@ def compute_alpha_shape(points, alpha):
         The x and y coordinates of the points
     alpha : float
         Influences the shape of the alpha shape. Higher values lead to more
-        edges being deleted.
+        triangles being deleted.
 
     Returns
     -------

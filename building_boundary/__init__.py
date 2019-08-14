@@ -1,6 +1,5 @@
 from .building_boundary import trace_boundary
-from .shapes import alphashape
-from .shapes import boundingbox
+from .shapes import fit
 from .core import intersect
 from .core import regularize
 from .core import segment
@@ -17,8 +16,7 @@ __all__ = [
     'regularize',
     'segment',
     'segmentation',
-    'alphashape',
-    'boundingbox',
+    'fit'
     'merge',
     'inflate',
     'utils',

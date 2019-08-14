@@ -5,13 +5,9 @@
 """
 
 import numpy as np
-from shapely.geometry import Polygon, Point
-from shapely.ops import cascaded_union
+from shapely.geometry import Polygon
 
-import concave_hull
-
-from .shapes.alphashape import compute_alpha_shape
-from .shapes.boundingbox import compute_bounding_box
+from .shapes.fit import compute_shape, fit_basic_shape
 from .core.segment import BoundarySegment
 from .core.segmentation import boundary_segmentation
 from .core.merge import merge_segments
@@ -74,37 +70,21 @@ def trace_boundary(points, ransac_threshold, max_error=None, alpha=None,
     vertices : (Mx2) array
         The vertices of the computed boundary line
     """
-    if alpha is not None:
-        shape = compute_alpha_shape(points, alpha)
-
-        if k is not None:
-            boundary_points = concave_hull.compute(points, k, True)
-            shape_ch = Polygon(boundary_points).buffer(0)
-            shape = cascaded_union([shape, shape_ch])
-
-        if type(shape) != Polygon:
-            shape = max(shape, key=lambda s: s.area)
-
+    shape = compute_shape(points, alpha=alpha, k=k)
         boundary_points = np.array(shape.exterior.coords)
-    elif k is not None:
-        boundary_points = concave_hull.compute(points, k, True)
-        shape = Polygon(boundary_points).buffer(0)
-    else:
-        raise ValueError('Either k or alpha needs to be set.')
 
-    bounding_box = compute_bounding_box(boundary_points,
+    basic_shape, dist_basic_shape = fit_basic_shape(
+        shape,
+        max_error,
                                         given_angles=primary_orientations,
-                                        max_error=max_error)
-
-    distances = [bounding_box.exterior.distance(Point(p)) for
-                 p in boundary_points]
-    if max_error is not None and max(distances) < max_error:
-        return np.array(bounding_box.exterior.coords)
+    )
+    if max_error is not None and dist_basic_shape < max_error*2:
+        return np.array(basic_shape.exterior.coords)
 
     segments = boundary_segmentation(boundary_points, ransac_threshold)
 
     if len(segments) in [0, 1, 2]:
-        return np.array(bounding_box.exterior.coords)
+        return np.array(basic_shape.exterior.coords)
 
     boundary_segments = [BoundarySegment(s) for s in segments]
 
