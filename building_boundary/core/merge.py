@@ -101,8 +101,8 @@ def check_distance(segments, pivots, max_distance):
     if len(too_far) > 0:
         too_far[-1] = 0 if too_far[-1] > len(segments) - 1 else too_far[-1]
         for x in too_far:
-            bisect.insort_left(pivots, x)
-        pivots = list(set(pivots))
+            if x not in pivots:
+                bisect.insort_left(pivots, x)
     return pivots
 
 
