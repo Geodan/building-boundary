@@ -43,7 +43,7 @@ def extend_segment(segment, points, indices, distance):
             if (i - 2 >= indices[0] and
                     line_segment.dist_point_line(points[i-1]) < distance and
                     line_segment.dist_point_line(points[i-2]) < distance):
-                segment.append(i)
+                continue
             else:
                 break
 
@@ -54,7 +54,7 @@ def extend_segment(segment, points, indices, distance):
             if (i + 2 <= indices[-1] and
                     line_segment.dist_point_line(points[i+1]) < distance and
                     line_segment.dist_point_line(points[i+2]) < distance):
-                segment.append(i)
+                continue
             else:
                 break
 

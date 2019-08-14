@@ -133,7 +133,10 @@ def trace_boundary(points, ransac_threshold, max_error=None, alpha=None,
                                      perp_dist_weight=perp_dist_weight)
 
     if inflate:
-        vertices = inflate_polygon(vertices, boundary_points)
+        remaining_points = boundary_segments[0].points
+        for s in boundary_segments[1:]:
+            remaining_points = np.vstack((remaining_points, s.points))
+        vertices = inflate_polygon(vertices, remaining_points)
 
     if not Polygon(vertices).is_valid:
         return np.array(bounding_box.exterior.coords)
