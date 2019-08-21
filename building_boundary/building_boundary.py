@@ -73,12 +73,12 @@ def trace_boundary(points, ransac_threshold, max_error=None, alpha=None,
     shape = compute_shape(points, alpha=alpha, k=k)
     boundary_points = np.array(shape.exterior.coords)
 
-    basic_shape, dist_basic_shape = fit_basic_shape(
+    basic_shape, basic_shape_fits = fit_basic_shape(
         shape,
-        max_error,
+        max_error=max_error,
         given_angles=primary_orientations,
     )
-    if max_error is not None and dist_basic_shape < max_error*2:
+    if max_error is not None and basic_shape_fits:
         return np.array(basic_shape.exterior.coords)
 
     segments = boundary_segmentation(boundary_points, ransac_threshold)

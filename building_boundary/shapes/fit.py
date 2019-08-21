@@ -6,7 +6,7 @@
 
 import numpy as np
 from scipy.spatial import ConvexHull
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Polygon
 from shapely.ops import cascaded_union
 
 import concave_hull
@@ -37,8 +37,14 @@ def compute_shape(points, alpha=None, k=None):
     return shape
 
 
-def fit_basic_shape(shape, max_error, given_angles=None):
-    points = [Point(p) for p in shape.exterior.coords]
+def determine_non_fit_area(shape, basic_shape, max_error=None):
+    diff = basic_shape - shape
+    if max_error is not None:
+        diff = diff.buffer(-max_error)
+    return diff.area
+
+
+def fit_basic_shape(shape, max_error=None, given_angles=None):
     convex_hull = ConvexHull(shape.exterior.coords)
 
     bounding_box = compute_bounding_box(
@@ -47,36 +53,25 @@ def fit_basic_shape(shape, max_error, given_angles=None):
         given_angles=given_angles,
         max_error=max_error
     )
-    dist_points_to_box = [
-        bounding_box.exterior.distance(p) for p in points
-    ]
-    dist_box_to_points = [
-        shape.exterior.distance(Point(p)) for
-        p in bounding_box.exterior.coords
-    ]
-    bounding_box_dist = max(dist_points_to_box + dist_box_to_points)
 
-    if max_error is not None and bounding_box_dist < max_error*2:
-        return bounding_box, bounding_box_dist
+    bbox_non_fit_area = determine_non_fit_area(
+        shape, bounding_box, max_error=max_error
+    )
+    if max_error is not None and bbox_non_fit_area <= 0:
+        return bounding_box, True
 
     bounding_triangle = compute_bounding_triangle(
         np.array(shape.exterior.coords),
         convex_hull=convex_hull
     )
-    dist_points_to_triangle = [
-        bounding_triangle.exterior.distance(p) for p in points
-    ]
-    dist_triangle_to_points = [
-        shape.exterior.distance(Point(p)) for
-        p in bounding_triangle.exterior.coords
-    ]
-    bounding_triangle_dist = max(dist_points_to_triangle +
-                                 dist_triangle_to_points)
 
-    if max_error is not None and bounding_triangle_dist < max_error*2:
-        return bounding_triangle, bounding_triangle_dist
+    tri_non_fit_area = determine_non_fit_area(
+        shape, bounding_triangle, max_error=max_error
+    )
+    if max_error is not None and tri_non_fit_area <= 0:
+        return bounding_triangle, True
 
-    if bounding_box_dist < bounding_triangle_dist:
-        return bounding_box, bounding_box_dist
+    if bbox_non_fit_area < tri_non_fit_area:
+        return bounding_box, False
     else:
-        return bounding_triangle, bounding_triangle_dist
+        return bounding_triangle, False
