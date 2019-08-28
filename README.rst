@@ -15,16 +15,13 @@ The basic steps of the algorithm are as follows:
 7. Merge subsequent parallel lines
 8. Compute the intersections of the lines
 
-.. image:: img/1_boundary_points.png
-   :width: 200pt
-.. image:: img/2_segmentation.png
-   :width: 200pt
-.. image:: img/3_regularization.png
-   :width: 200pt
-.. image:: img/4_intersections.png
-   :width: 200pt
-.. image:: img/5_result.png
-   :width: 200pt
+.. raw:: html
+
+   <img src="img/1_boundary_points.png" alt="boundary points" width="300">
+   <img src="img/2_segmentation.png" alt="boundary points" width="300">
+   <img src="img/3_regularization.png" alt="boundary points" width="300">
+   <img src="img/4_intersections.png" alt="boundary points" width="300">
+   <img src="img/5_result.png" alt="boundary points" width="300">
 
 Prerequisites
 =============
