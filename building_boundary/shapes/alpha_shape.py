@@ -4,14 +4,28 @@
 @author: Chris Lucas
 """
 
+import math
+
 import numpy as np
-from CGAL.CGAL_Kernel import Point_2
-from CGAL.CGAL_Alpha_shape_2 import Alpha_shape_2
-from CGAL.CGAL_Alpha_shape_2 import REGULAR
 from shapely.geometry import Polygon, MultiPolygon
 
+try:
+    from CGAL.CGAL_Kernel import Point_2
+    from CGAL.CGAL_Alpha_shape_2 import Alpha_shape_2
+    from CGAL.CGAL_Alpha_shape_2 import REGULAR
+    CGAL_AVAILABLE = True
+    cascaded_union = None
+    Delaunay = None
+except ImportError:
+    from shapely.ops import cascaded_union
+    from scipy.spatial import Delaunay
+    CGAL_AVAILABLE = False
+    Point_2 = None
+    Alpha_shape_2 = None
+    REGULAR = None
 
-def compute_alpha_shape(points, alpha):
+
+def alpha_shape_cgal(points, alpha):
     """
     Uses CGAL to compute the alpha shape (a concave hull) of a set of points.
     The alpha shape will not contain any interiors.
@@ -69,4 +83,98 @@ def compute_alpha_shape(points, alpha):
 
     alpha_shape = MultiPolygon(polygons).buffer(0)
 
+    return alpha_shape
+
+
+def triangle_geometry(triangle):
+    """
+    Compute the area and circumradius of a triangle.
+
+    Parameters
+    ----------
+    triangle : (3x3) array-like
+        The coordinates of the points which form the triangle.
+
+    Returns
+    -------
+    area : float
+        The area of the triangle
+    circum_r : float
+        The circumradius of the triangle
+    """
+    pa, pb, pc = triangle
+    # Lengths of sides of triangle
+    a = math.hypot((pa[0] - pb[0]), (pa[1] - pb[1]))
+    b = math.hypot((pb[0] - pc[0]), (pb[1] - pc[1]))
+    c = math.hypot((pc[0] - pa[0]), (pc[1] - pa[1]))
+    # Semiperimeter of triangle
+    s = (a + b + c) / 2.0
+    # Area of triangle by Heron's formula
+    area = math.sqrt(s * (s - a) * (s - b) * (s - c))
+    if area != 0:
+        circum_r = (a * b * c) / (4.0 * area)
+    else:
+        circum_r = 0
+    return area, circum_r
+
+
+def alpha_shape_python(points, alpha):
+    """
+    Compute the alpha shape (or concave hull) of points.
+    The alpha shape will not contain any interiors.
+
+    Parameters
+    ----------
+    points : (Mx2) array
+        The coordinates of the points.
+    alpha : float
+        Influences the shape of the alpha shape. Higher values lead to more
+        triangles being deleted.
+
+    Returns
+    -------
+    alpha_shape : polygon
+        The computed alpha shape as a shapely polygon
+    """
+    triangles = []
+    tri = Delaunay(points)
+    for t in tri.simplices:
+        area, circum_r = triangle_geometry(points[t])
+        if area != 0:
+            if circum_r < 1.0 / alpha:
+                triangles.append(Polygon(points[t]))
+
+    alpha_shape = cascaded_union(triangles)
+    if type(alpha_shape) == MultiPolygon:
+        alpha_shape = MultiPolygon([Polygon(s.exterior) for s in alpha_shape])
+    else:
+        alpha_shape = Polygon(alpha_shape.exterior)
+
+    return alpha_shape
+
+
+def compute_alpha_shape(points, alpha):
+    """
+    Compute the alpha shape (or concave hull) of points.
+    The alpha shape will not contain any interiors.
+
+    Parameters
+    ----------
+    points : (Mx2) array
+        The coordinates of the points.
+    alpha : float
+        Influences the shape of the alpha shape. Higher values lead to more
+        triangles being deleted.
+
+    Returns
+    -------
+    alpha_shape : polygon
+        The computed alpha shape as a shapely polygon
+    """
+    if len(points) < 4:
+        raise ValueError('Not enough points to compute an alpha shape.')
+    if CGAL_AVAILABLE:
+        alpha_shape = alpha_shape_cgal(points, alpha)
+    else:
+        alpha_shape = alpha_shape_python(points, alpha)
     return alpha_shape
