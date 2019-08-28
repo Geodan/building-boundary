@@ -2,9 +2,7 @@
 Building Boundary
 =================
 
-NOTE: STILL IN VERY ACTIVE DEVELOPMENT AND IS UNSTABLE. NO SUPPORT CAN BE GIVEN AT THIS TIME.
-
-Attempts to trace the boundary of a set of points belonging to an aerial LiDAR scan of a building (part). It tries to optimize the boundary by exploiting the (most often) rectilinearity of buildings. It will look for the primary orientations of the building and try to regularize all boundary lines to these orientations (or the perpendicular).
+Traces the boundary of a set of points belonging to an aerial LiDAR scan of a building (part). It attempts to optimize the boundary by exploiting the (most often) rectilinearity of buildings. It will look for the primary orientations of the building and try to regularize all boundary lines to these orientations (or the perpendicular).
 
 The basic steps of the algorithm are as follows:
 
@@ -17,17 +15,28 @@ The basic steps of the algorithm are as follows:
 7. Merge subsequent parallel lines
 8. Compute the intersections of the lines
 
+.. image:: img/1_boundary_points.png
+   :width: 200pt
+.. image:: img/2_segmentation.png
+   :width: 200pt
+.. image:: img/3_regularization.png
+   :width: 200pt
+.. image:: img/4_intersections.png
+   :width: 200pt
+.. image:: img/5_result.png
+   :width: 200pt
+
 Prerequisites
 =============
 
 - python >= 3.6
 - pip >= 19.1
-- concave_hull_ >= 1.0
+- concave-hull_ >= 1.0
 - pymintriangle_ >= 0.1
-- CGAL (with SWIG python bindings) >= 4.12
+- CGAL (with SWIG python bindings) >= 4.12 (optional, drastically improves computation time of alpha shapes)
 
-.. _concave_hull: https://github.com/Geodan/concave-hull
-.. _pymintriangle: https://github.com/chrislcs/pymintriangle
+.. _concave-hull: https://github.com/Geodan/concave-hull
+.. _pymintriangle: https://github.com/Geodan/pymintriangle
 
 Install
 =======
