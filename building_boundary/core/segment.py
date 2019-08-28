@@ -82,16 +82,12 @@ class BoundarySegment(object):
         self.a, self.b, self.c = line
         self._create_line_segment()
 
-    def fit_line(self, method='TLS', max_error=None):
+    def fit_line(self, max_error=None):
         """
         Fit a line to the set of points of the object.
 
         Parameters
         ----------
-        method : string
-            The method used to fit the line. Options:
-            - Ordinary Least Squares: 'OLS'
-            - Total Least Squares: 'TLS'
         max_error : float or int
             The maximum error (max distance points to line) the
             fitted line is allowed to have. A ThresholdError will be
@@ -99,10 +95,8 @@ class BoundarySegment(object):
 
         Raises
         ------
-        NotImplementedError
-            If a non-existing method is chosen.
         ThresholdError
-            If the error of the fitted line (average distance points to
+            If the error of the fitted line (max distance points to
             line) exceeds the given max error.
         """
         if len(self.points) == 1:
@@ -125,18 +119,11 @@ class BoundarySegment(object):
             self.b = 1
             self.c = -self.points[0, 1]
         else:
-            if method == 'OLS':
-                self.a, self.c = np.polyfit(self.points[:, 0],
-                                            self.points[:, 1], 1)
-                self.b = -1
-            elif method == 'TLS':
-                _, eigenvectors = PCA(self.points)
-                self.a = eigenvectors[1, 0] / eigenvectors[0, 0]
-                self.b = -1
-                self.c = (np.mean(self.points[:, 1]) -
-                          np.mean(self.points[:, 0]) * self.a)
-            else:
-                raise NotImplementedError("Chosen method not available.")
+            _, eigenvectors = PCA(self.points)
+            self.a = eigenvectors[1, 0] / eigenvectors[0, 0]
+            self.b = -1
+            self.c = (np.mean(self.points[:, 1]) -
+                      np.mean(self.points[:, 0]) * self.a)
 
             if max_error is not None:
                 error = self.error()
@@ -256,8 +243,8 @@ class BoundarySegment(object):
         Returns
         -------
         orientation : float
-        The primary orientation closest to the orientation of this line
-        segment.
+            The primary orientation closest to the orientation of this line
+            segment.
         """
         po_diff = [utils.angle.min_angle_difference(self.orientation, o) for
                    o in primary_orientations]
