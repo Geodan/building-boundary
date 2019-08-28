@@ -74,15 +74,27 @@ def get_points_between_pivots(segments, pivots):
 
 
 def get_segments_between_pivots(segments, pivots):
+    """
+    Graps the segments between two pivots.
+
+    Parameters
+    ----------
+    segments : list of BoundarySegment
+        The segments.
+    pivots : list of int
+        The indices of the pivot points.
+
+    Returns
+    -------
+    segments : list of int
+        The indices of the segments between the pivots.
+    """
     k, n = pivots
     if k < n:
-        return [s for s in segments[k:n]]
+        return list(range(k, n))
     else:  # edge case
-        segments_pivots = []
-        for s in segments[k:]:
-            segments_pivots.append(s)
-        for s in segments[:n]:
-            segments_pivots.append(s)
+        segments_pivots = list(range(k, len(segments)))
+        segments_pivots.extend(range(0, n))
         return segments_pivots
 
 
@@ -111,15 +123,75 @@ def parallel_distance(segment1, segment2):
 
 
 def check_distance(segments, pivots, max_distance):
-    distances = np.array([parallel_distance(pair[0], pair[1])
-                         for pair in utils.create_pairs(segments)])
-    too_far = np.where(distances > max_distance)[0] + 1
+    """
+    Checks if the distance between all subsequent parallel segments
+    is larger than a given max, and inserts a pivot if this is the case.
+
+    Parameters
+    ----------
+    segments : list of BoundarySegment
+        The segments.
+    pivots : list of int
+        The indices of the pivot points.
+    max_distance : float
+        The maximum distance two parallel subsequent segments may be to be
+        merged.
+
+    Returns
+    -------
+    pivots : list of int
+        The indices of the pivot points.
+    """
+    distances = []
+    for i, pair in enumerate(utils.create_pairs(segments)):
+        if (i + 1) % len(segments) not in pivots:
+            distances.append(parallel_distance(pair[0], pair[1]))
+        else:
+            distances.append(float('nan'))
+    too_far = np.where(np.array(distances) > max_distance)[0] + 1
     if len(too_far) > 0:
-        too_far[-1] = 0 if too_far[-1] > len(segments) - 1 else too_far[-1]
+        too_far[-1] = too_far[-1] % len(segments)
         for x in too_far:
-            if x not in pivots:
-                bisect.insort_left(pivots, x)
-    return pivots
+            bisect.insort_left(pivots, x)
+    return pivots, distances
+
+
+def merge_between_pivots(segments, start, end, max_error=None):
+    """
+    Merge the segments between two pivots.
+
+    Parameters
+    ----------
+    segments : list of BoundarySegment
+        The segments.
+    start : int
+        The first segment index.
+    end : int
+        Till which index segments should be merged.
+    max_error : float
+        The maximum error (distance) a point can have to a computed line.
+
+    Returns
+    -------
+    merged_segment : BoundarySegment
+        The segments merged.
+    """
+    if end == start + 1:
+        return segments[start]
+    else:
+        points = get_points_between_pivots(
+            segments,
+            [start, end]
+        )
+
+        merged_segment = BoundarySegment(points)
+        merge_segments = np.array(segments)[get_segments_between_pivots(
+            segments, [start, end]
+        )]
+        longest_segment = max(merge_segments, key=lambda s: s.length)
+        orientation = longest_segment.orientation
+        merged_segment.regularize(orientation, max_error=max_error)
+        return merged_segment
 
 
 def merge_segments(segments, angle_epsilon=0.05,
@@ -146,32 +218,30 @@ def merge_segments(segments, angle_epsilon=0.05,
     segments : list of BoundarySegment
         The new set of segments
     """
-    new_segments = []
-
     orientations = np.array([s.orientation for s in segments])
     pivots = find_pivots(orientations, angle_epsilon)
 
     if max_distance is not None:
-        pivots = check_distance(segments, pivots, max_distance)
+        pivots, distances = check_distance(segments, pivots, max_distance)
 
-    for pivot_segment in utils.create_pairs(pivots):
+    while True:
+        new_segments = []
         try:
-            points = get_points_between_pivots(
-                segments,
-                pivot_segment
-            )
-
-            merged_segment = BoundarySegment(points)
-            merge_segments = get_segments_between_pivots(
-                segments, pivot_segment
-            )
-            longest_segment = max(merge_segments, key=lambda s: s.length)
-            orientation = longest_segment.orientation
-            merged_segment.regularize(orientation, max_error=max_error)
-            new_segments.append(merged_segment)
+            for pivot_segment in utils.create_pairs(pivots):
+                new_segment = merge_between_pivots(
+                    segments, pivot_segment[0], pivot_segment[1], max_error
+                )
+                new_segments.append(new_segment)
+            break
         except utils.error.ThresholdError:
-            new_segments.extend(
-                get_segments_between_pivots(segments, pivot_segment)
-            )
+            segments_idx = get_segments_between_pivots(segments, pivot_segment)
+            new_pivot_1 = segments_idx[
+                np.nanargmax(np.array(distances)[segments_idx])
+            ]
+            new_pivot_2 = new_pivot_1 + 1
+            if new_pivot_1 not in pivots:
+                bisect.insort_left(pivots, new_pivot_1)
+            if new_pivot_2 not in pivots:
+                bisect.insort_left(pivots, new_pivot_2)
 
     return new_segments
