@@ -17,6 +17,28 @@ from .bounding_triangle import compute_bounding_triangle
 
 
 def compute_shape(points, alpha=None, k=None):
+    """
+    Computes the shape of a set of points based on concave hulls.
+
+    Parameters
+    ----------
+    points : (Mx2) array
+        The coordinates of the points.
+    alpha : float
+        Set to compute the shape using an alpha shape using this
+        chosen alpha. If both alpha and k are set both methods will be used and
+        the resulting shapes merged to find the boundary points.
+    k : int
+        Set to compute the shape using a knn based concave hull
+        algorithm using this amount of nearest neighbors. If both alpha and k
+        are set both methods will be used and the resulting shapes merged to
+        find the boundary points.
+
+    Returns
+    -------
+    shape : polygon
+        The computed shape of the points.
+    """
     if alpha is not None:
         shape = compute_alpha_shape(points, alpha)
 
@@ -38,13 +60,58 @@ def compute_shape(points, alpha=None, k=None):
 
 
 def determine_non_fit_area(shape, basic_shape, max_error=None):
+    """
+    Determines the area of the part of the basic shape that does not fit the
+    given shape (i.e. what is left after differencing the two shapes,
+    and optionally negative buffering with the max error).
+
+    Parameters
+    ----------
+    shape : polygon
+        The shape of the points.
+    basic_shape : polygon
+        The shape of the rectangle or triangle
+    max_error : float, optional
+        The maximum error (distance) a point may have to the shape.
+
+    Returns
+    -------
+    area : float
+        The area of the part of the basic shape that did not fit the
+        given shape.
+    """
     diff = basic_shape - shape
     if max_error is not None:
         diff = diff.buffer(-max_error)
+    print('non fit area: {}'.format(diff.area))
     return diff.area
 
 
 def fit_basic_shape(shape, max_error=None, given_angles=None):
+    """
+    Compares a shape to a rectangle and a triangle. If a max error is
+    given it will return the shape and indicate that the basic shape fits
+    well enough if that is the case.
+
+    Parameters
+    ----------
+    shape : polygon
+        The shape of the points.
+    max_error : float, optional
+        The maximum error (distance) a point may have to the shape.
+    given_angles : list of float, optional
+        If set, during the computation of the minimum area bounding box,
+        the minimum area bounding box of these angles will be checked
+        (instead of the angles of all edges of the convex hull).
+
+    Returns
+    -------
+    basic_shape : polygon
+        The polygon of the basic shape (rectangle or triangle) that fits the
+        best.
+    basic_shape_fits : bool
+        If the found basic shape fits well enough within the given max error.
+    """
     convex_hull = ConvexHull(shape.exterior.coords)
 
     bounding_box = compute_bounding_box(

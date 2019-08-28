@@ -13,6 +13,21 @@ from .. import utils
 
 
 def point_on_line_segment(line_segment, point):
+    """
+    Determines if a point is on a line defined by two points.
+
+    Parameters
+    ----------
+    line_segment : (2x2) array
+        A line defined by the coordinates of two points.
+    point : (1x2) array
+        The coordinates of the point to check
+
+    Returns
+    -------
+     : bool
+        If the point is on the line defined by two points.
+    """
     a = line_segment[0]
     b = line_segment[1]
     p = point
@@ -28,15 +43,49 @@ def point_on_line_segment(line_segment, point):
             return False
 
 
-def nearest_edges(point_on_polygon, edges):
-    nearest = []
+def point_polygon_edges(point_on_polygon, edges):
+    """
+    Determines on which edge(s) of a polygon a point (which is on the polygon's
+    exterior) lies.
+
+    Parameters
+    ----------
+    point_on_polygon : (1x2) array
+        The coordinates of the point.
+    edges : list of tuple of (1x2) array
+        Each tuple contains the coordinates of the start and end point of an
+        edge of the polygon.
+
+    Returns
+    -------
+    found_edges : list of int
+        The indices of the edges on which the given point lies. Often of
+        length 1, however if a point lies on a corner it lies on two edges
+        and two indices will be returned.
+    """
+    found_edges = []
     for i, e in enumerate(edges):
         if point_on_line_segment(e, point_on_polygon):
-            nearest.append(i)
-    return nearest
+            found_edges.append(i)
+    return found_edges
 
 
 def inflate_polygon(vertices, points):
+    """
+    Inflates the polygon such that it will contain all the given points.
+
+    Parameters
+    ----------
+    vertices : (Mx2) array
+        The coordinates of the vertices of the polygon.
+    points : (Mx2) array
+        The coordinates of the points that the polygon should contain.
+
+    Returns
+    -------
+    vertices : (Mx2) array
+        The coordinates of the vertices of the inflated polygon.
+    """
     new_vertices = vertices.copy()
     points_geom = [Point(p) for p in points]
     n_vertices = len(vertices)
@@ -56,10 +105,10 @@ def inflate_polygon(vertices, points):
         # Find nearest polygon edge to point
         point_on_polygon, _ = nearest_points(polygon, Point(p))
         point_on_polygon = np.array(point_on_polygon)
-        nearest = nearest_edges(point_on_polygon, edges)
+        nearest_edges = point_polygon_edges(point_on_polygon, edges)
 
         # Move polygon edge out such that point is enclosed
-        for i in nearest:
+        for i in nearest_edges:
             delta = p - point_on_polygon
             p1 = new_vertices[i] + delta
             p2 = new_vertices[(i+1) % n_vertices] + delta
@@ -70,11 +119,8 @@ def inflate_polygon(vertices, points):
             l3 = BoundarySegment(np.array([new_vertices[(i+1) % n_vertices],
                                            new_vertices[(i+2) % n_vertices]]))
             # Intersections
-            i1 = l2.line_intersect(l1.line)
-            i2 = l2.line_intersect(l3.line)
-
-            new_vertices[i] = i1
-            new_vertices[(i+1) % n_vertices] = i2
+            new_vertices[i] = l2.line_intersect(l1.line)
+            new_vertices[(i+1) % n_vertices] = l2.line_intersect(l3.line)
 
             # Update polygon
             polygon = Polygon(new_vertices)

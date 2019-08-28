@@ -89,6 +89,21 @@ def geometry_orientations(geom):
 
 
 def compute_orientations(footprint_wkt):
+    """
+    Computes the orientations of the footprint.
+
+    Parameters
+    ----------
+    footprint_wkt : string
+        The footprint geometry defined by a WKT string.
+
+    Returns
+    -------
+    orientations : list of float
+        The orientations of the lines of the geometry in radians from
+        0 to pi (east to west counterclockwise)
+        0 to -pi (east to west clockwise)
+    """
     footprint_geom = wkt.loads(footprint_wkt)
     orientations = geometry_orientations(footprint_geom)
     return orientations

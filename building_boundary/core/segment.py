@@ -51,6 +51,18 @@ class BoundarySegment(object):
         ----------
         points : (Mx2) array
             X and Y coordinates of points.
+        a : float
+            The a coefficient (ax + by + c = 0) of the line.
+        b : float
+            The b coefficient (ax + by + c = 0) of the line.
+        c : float
+            The c coefficient (ax + by + c = 0) of the line.
+        end_points : (2x2) array
+            The coordinates of the end points of the line segment.
+        length : float
+            The length of the line segment.
+        orientation : float
+            The orientation of the line segment (in radians).
         """
         self.points = points
         self.fit_line()
@@ -81,16 +93,9 @@ class BoundarySegment(object):
             - Ordinary Least Squares: 'OLS'
             - Total Least Squares: 'TLS'
         max_error : float or int
-            The maximum error (average distance points to line) the
+            The maximum error (max distance points to line) the
             fitted line is allowed to have. A ThresholdError will be
             raised if this max error is exceeded.
-
-        Attributes
-        ----------
-        slope : float
-            The slope of the fitted line.
-        intercept : float
-            The y-intercept of the fitted line.
 
         Raises
         ------
@@ -174,15 +179,6 @@ class BoundarySegment(object):
         Defines a line segment of the fitted line by creating
         the end points, length and orientation.
 
-        Attributes
-        ----------
-        end_points : (2x2) array
-            The coordinates of the end points of the line segment.
-        length : float
-            The length of the line segment.
-        orientation : float
-            The orientation of the line segment (in radians).
-
         Raises
         ------
         ValueError
@@ -233,9 +229,13 @@ class BoundarySegment(object):
 
         Parameters
         ----------
+        point : (1x2) array
+            The X and Y coordinates of a point.
 
         Returns
         -------
+        dist : float
+            The distance from the given point to the fitted line.
 
         .. [1] https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
         """
@@ -255,6 +255,7 @@ class BoundarySegment(object):
 
         Returns
         -------
+        orientation : float
         The primary orientation closest to the orientation of this line
         segment.
         """
@@ -345,6 +346,23 @@ class BoundarySegment(object):
             return np.array([])
 
     def side_point_on_line(self, point):
+        """
+        Determines on which side of the line segment a point, which is on the
+        line, lies.
+
+        Parameters
+        ----------
+        point : (1x2) array
+            The X and Y coordinates of a point, which lies on the line of this
+            segment.
+
+        Returns
+        -------
+         : int
+            0 if point on the line segment
+            1 if point on the side of the starting point
+            -1 if point on the side of the end point
+        """
         a = self.end_points[0]
         b = self.end_points[1]
         c = point

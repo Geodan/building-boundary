@@ -87,6 +87,22 @@ def get_segments_between_pivots(segments, pivots):
 
 
 def parallel_distance(segment1, segment2):
+    """
+    Computes the distance between two parallel segments.
+
+    Parameters
+    ----------
+    segment1 : BoundarySegment
+        A BoundarySegment.
+    segment2 : BoundarySegment
+        A subsequent BoundarySegment.
+
+    Returns
+    -------
+    distance : float
+        The distance between the two segments measured from the end point of
+        segment 1 in a perpendicular line to the line of segment 2.
+    """
     intersect = perpedicular_line_intersect(segment1, segment2)
     if len(intersect) > 0:
         return utils.geometry.distance(segment1.end_points[1], intersect)
@@ -116,11 +132,19 @@ def merge_segments(segments, angle_epsilon=0.05,
     ----------
     segments : list of BoundarySegment
         The segments.
-    angle_epsilon : float or int
+    angle_epsilon : float
+        The angle (in radians) difference within two angles are considered the
+        same.
+    max_distance : float
+        If the distance between two parallel sequential segments (based on the
+        angle epsilon) is lower than this value the segments get merged.
+    max_error : float
+        The maximum error (distance) a point can have to a computed line.
 
     Returns
     -------
     segments : list of BoundarySegment
+        The new set of segments
     """
     new_segments = []
 

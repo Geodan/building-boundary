@@ -112,6 +112,24 @@ def rotating_calipers_bbox(points, angles):
 
 
 def check_error(points, bbox, max_error):
+    """
+    Checks if the given bounding box is close enough to the points based on
+    the given max error.
+
+    Parameters
+    ----------
+    points : (Mx2) array
+        The coordinates of the points.
+    bbox : (4x2) array
+        The coordinates of the vertices of the bounding box.
+    max_error : float
+        The maximum error (distance) a point can have to the bounding box.
+
+    Returns
+    -------
+     : bool
+        If all points are within the max error distance of the bounding box.
+    """
     distances = [bbox.exterior.distance(Point(p)) for p in points]
     return all([d < max_error for d in distances])
 
@@ -125,6 +143,13 @@ def compute_bounding_box(points, convex_hull=None,
     ----------
     points : (Mx2) array
         The coordinates of the points.
+    convex_hull : scipy.spatial.ConvexHull, optional
+        The convex hull of the points, as computed by SciPy.
+    given_angles : list of float, optional
+        If set the minimum area bounding box of these angles will be checked
+        (instead of the angles of all edges of the convex hull).
+    max_error : float, optional
+        The maximum error (distance) a point can have to the bounding box.
 
     Returns
     -------

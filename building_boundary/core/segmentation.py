@@ -11,7 +11,7 @@ from .segment import BoundarySegment
 
 def ransac_line_segmentation(points, distance):
     """
-    Fit a line using RANSAC.
+    Segment a line using RANSAC.
 
     Parameters
     ----------
@@ -34,6 +34,26 @@ def ransac_line_segmentation(points, distance):
 
 
 def extend_segment(segment, points, indices, distance):
+    """
+    Extend a line found by ransac based on the sequence and the distance.
+
+    Parameters
+    ----------
+    segment : list of int
+        The indices of the points belonging to the segment/line.
+    points : (Mx2) array
+        The coordinates of all the points.
+    indices : list of int
+        The indices of the points in the sequence.
+    distance : float
+        The maximum distance between a point and a line for a point to be
+        considered belonging to that line.
+
+    Returns
+    -------
+    segment : list of int
+        The indices of the points belonging to the segment/line.
+    """
     line_segment = BoundarySegment(points[segment])
 
     for i in range(segment[0]-1, indices[0]-1, -1):
@@ -62,6 +82,24 @@ def extend_segment(segment, points, indices, distance):
 
 
 def extract_segment(points, indices, distance):
+    """
+    Extract a line segment from a sequence of points.
+
+    Parameters
+    ----------
+    points : (Mx2) array
+        The coordinates of all the points.
+    indices : list of int
+        The indices of the points in the sequence.
+    distance : float
+        The maximum distance between a point and a line for a point to be
+        considered belonging to that line.
+
+    Returns
+    -------
+    segment : list of int
+        The indices of the points belonging to the segment/line.
+    """
     inliers = ransac_line_segmentation(points[indices], distance)
     inliers = indices[inliers]
 
@@ -82,6 +120,21 @@ def extract_segment(points, indices, distance):
 
 
 def get_insert_loc(segments, segment):
+    """
+    Uses a binary search to find the correct location to insert a new segment.
+
+    Parameters
+    ----------
+    segments : list of list of int
+        The indices of the points belonging to the segments/lines.
+    segment : list of int
+        The indices of the points belonging to the segment/line.
+
+    Returns
+    -------
+     : int
+        The index where the segment should be inserted.
+    """
     if len(segments) == 0:
         return 0
     if segment[0] > segments[-1][0]:
@@ -99,6 +152,22 @@ def get_insert_loc(segments, segment):
 
 
 def get_remaining_sequences(indices, mask):
+    """
+    Gets the remaining sequences given the points that are already part of
+    a segment.
+
+    Parameters
+    ----------
+    indices : list of int
+        The indices of the points in the sequence.
+    mask : list of bool
+        Marks the points that are part of a segment.
+
+    Returns
+    -------
+    sequences : list of list of int
+        The indices of each remaining sequence.
+    """
     sequences = np.split(indices, np.where(np.diff(mask) == 1)[0] + 1)
 
     if mask[0]:
@@ -112,6 +181,26 @@ def get_remaining_sequences(indices, mask):
 
 
 def extract_segments(segments, points, indices, mask, distance):
+    """
+    Extract line segments from a ring of points.
+
+    Note: This is a recurisve function. Initiate with an empty segments
+          list.
+
+    Parameters
+    ----------
+    segments : list of list of int
+        The indices of the points belonging to segments/lines.
+    points : (Mx2) array
+        The coordinates of all the points.
+    indices : list of int
+        The indices of the points in the sequence.
+    mask : list of bool
+        Marks the points that are part of a segment.
+    distance : float
+        The maximum distance between a point and a line for a point to be
+        considered belonging to that line.
+    """
     if len(indices) == 2:
         segment = indices
     else:

@@ -10,12 +10,45 @@ from .. import utils
 
 
 def perpedicular_line_intersect(segment1, segment2):
+    """
+    Find the intersection of the perpendicular line at the end of
+    segment 1 and the line of segment 2.
+
+    Parameters
+    ----------
+    segment1 : BoundarySegment
+        A BoundarySegment
+    segment2 : BoundarySegment
+        A subsequent BoundarySegment
+
+    Returns
+    -------
+     : (1x2) array
+        The coordinates of the intersection.
+    """
     perp_line = utils.geometry.perpedicular_line(segment1.line,
                                                  segment1.end_points[1])
     return segment2.line_intersect(perp_line)
 
 
 def intersect_distance(intersect, segment1, segment2):
+    """
+    The distance between the segments and the intersection.
+
+    Parameters
+    ----------
+    intersect : (1x2) array
+        The coordinates of the intersection.
+    segment1 : BoundarySegment
+        A BoundarySegment
+    segment2 : BoundarySegment
+        A subsequent BoundarySegment
+
+    Returns
+    -------
+     : float
+        The distance between the segments and intersection.
+    """
     return min(utils.geometry.distance(segment1.end_points[1], intersect),
                utils.geometry.distance(segment2.end_points[0], intersect))
 
@@ -31,6 +64,9 @@ def compute_intersections(segments, perp_dist_weight=3):
     ----------
     segments : list of BoundarySegment
         The wall segments to compute intersections for.
+    perp_dist_weight : float, optional
+        How much closer a perpendicular line intersection needs to be to
+        be preferred over the intersection between the two segments.
 
     Returns
     -------
