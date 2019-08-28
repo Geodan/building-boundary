@@ -54,29 +54,64 @@ def extend_segment(segment, points, indices, distance):
     segment : list of int
         The indices of the points belonging to the segment/line.
     """
+    n_points = len(points)
     line_segment = BoundarySegment(points[segment])
 
-    for i in range(segment[0]-1, indices[0]-1, -1):
+    edge_case = indices[0] == 0 and indices[-1] == n_points-1
+
+    i = segment[0]-1 if not edge_case else (segment[0]-1) % n_points
+    while True:
         if line_segment.dist_point_line(points[i]) < distance:
             segment.insert(0, i)
         else:
-            if (i - 2 >= indices[0] and
-                    line_segment.dist_point_line(points[i-1]) < distance and
-                    line_segment.dist_point_line(points[i-2]) < distance):
-                continue
-            else:
-                break
+            if i - 2 >= indices[0]:
+                if not (line_segment.dist_point_line(
+                            points[i-1]
+                        ) < distance and
+                        line_segment.dist_point_line(
+                            points[i-2]
+                        ) < distance):
+                    break
+            elif edge_case:
+                if not (line_segment.dist_point_line(
+                            points[(i-1) % n_points]
+                        ) < distance and
+                        line_segment.dist_point_line(
+                            points[(i-2) % n_points]
+                        ) < distance):
+                    break
+        i -= 1
+        if not edge_case and i < indices[0]:
+            break
+        elif i < indices[0]:
+            i = i % n_points
 
-    for i in range(segment[-1]+1, indices[-1]+1):
+    i = segment[-1]+1 if not edge_case else (segment[-1]+1) % n_points
+    while True:
         if line_segment.dist_point_line(points[i]) < distance:
             segment.append(i)
         else:
-            if (i + 2 <= indices[-1] and
-                    line_segment.dist_point_line(points[i+1]) < distance and
-                    line_segment.dist_point_line(points[i+2]) < distance):
-                continue
-            else:
-                break
+            if i + 2 <= indices[-1]:
+                if not (line_segment.dist_point_line(
+                            points[i+1]
+                        ) < distance and
+                        line_segment.dist_point_line(
+                            points[i+2]
+                        ) < distance):
+                    break
+            elif edge_case:
+                if not (line_segment.dist_point_line(
+                            points[(i+1) % n_points]
+                        ) < distance and
+                        line_segment.dist_point_line(
+                            points[(i+2) % n_points]
+                        ) < distance):
+                    break
+        i += 1
+        if not edge_case and i > indices[-1]:
+            break
+        elif i > indices[-1]:
+            i = i % n_points
 
     return segment
 
@@ -210,7 +245,7 @@ def extract_segments(segments, points, indices, mask, distance):
         insert_loc = get_insert_loc(segments, segment)
         segments.insert(insert_loc, segment)
 
-        mask[segment[0]:segment[-1]+1] = False
+        mask[segment] = False
 
         sequences = get_remaining_sequences(indices, mask[indices])
 
