@@ -2,7 +2,7 @@
 Building Boundary
 =================
 
-Traces the boundary of a set of points belonging to an aerial LiDAR scan of a building (part). It attempts to optimize the boundary by exploiting the (most often) rectilinearity of buildings. It will look for the primary orientations of the building and try to regularize all boundary lines to these orientations (or the perpendicular).
+Traces the boundary of a set of points belonging to an aerial LiDAR scan of a building (part). It attempts to optimize the boundary by exploiting the (most often) rectilinearity of buildings. It will look for the primary orientations of the building and regularize all boundary lines to these orientations (or the perpendicular).
 
 The basic steps of the algorithm are as follows:
 

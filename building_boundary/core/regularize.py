@@ -77,7 +77,7 @@ def sort_orientations(orientations):
     return sorted_orientations
 
 
-def compute_primary_orientations(primary_segments, angle_epsilon=0.1):
+def compute_primary_orientations(primary_segments, angle_epsilon=0.05):
     """
     Computes the primary orientations based on the given primary segments.
 

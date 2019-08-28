@@ -38,6 +38,5 @@ __all__ = [
     'angle',
     'geometry',
     'error',
-    'orientations',
     'create_pairs'
 ]
