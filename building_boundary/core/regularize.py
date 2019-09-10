@@ -132,15 +132,19 @@ def check_perpendicular(primary_orientations, angle_epsilon=0.05):
 
     Returns
     -------
-     : bool
-        True if a perpendicular orientation to the main orientation
-    exists.
+     : int
+        The index of the perpendicular orientation to the main orientation.
+        Returns -1 if no perpendicular orientation was found.
     """
     main_orientation = primary_orientations[0]
     diffs = [utils.angle.min_angle_difference(main_orientation, a)
              for a in primary_orientations[1:]]
     diffs_perp = np.array(diffs) - math.pi/2
-    return min(np.abs(diffs_perp)) < angle_epsilon
+    closest_to_perp = np.argmin(np.abs(diffs_perp))
+    if diffs_perp[closest_to_perp] < angle_epsilon:
+        return closest_to_perp + 1
+    else:
+        return -1
 
 
 def add_perpendicular(primary_orientations, angle_epsilon=0.05):
@@ -171,13 +175,17 @@ def add_perpendicular(primary_orientations, angle_epsilon=0.05):
             utils.angle.perpendicular(main_orientation)
         )
     else:
+        perp_idx = check_perpendicular(primary_orientations,
+                                       angle_epsilon=angle_epsilon)
+        perp_orientation = utils.angle.perpendicular(main_orientation)
         # add a perpendicular orientation if no approximate perpendicular
         # orientations were found
-        if not check_perpendicular(primary_orientations,
-                                   angle_epsilon=angle_epsilon):
-            primary_orientations.append(
-                utils.angle.perpendicular(main_orientation)
-            )
+        if perp_idx == -1:
+            primary_orientations.append(perp_orientation)
+        # or set found approximate perpendicular orientation to exactly
+        # perpendicular
+        else:
+            primary_orientations[perp_idx] = perp_orientation
 
     return primary_orientations
 
