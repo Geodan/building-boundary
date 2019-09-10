@@ -59,8 +59,13 @@ def extend_segment(segment, points, indices, distance):
 
     edge_case = indices[0] == 0 and indices[-1] == n_points-1
 
-    i = segment[0]-1 if not edge_case else (segment[0]-1) % n_points
+    i = segment[0] - 1
     while True:
+        if edge_case and i < indices[0]:
+            i = i % n_points
+        elif i < indices[0]-1 or i < 0:
+            break
+
         if line_segment.dist_point_line(points[i]) < distance:
             segment.insert(0, i)
         else:
@@ -81,13 +86,14 @@ def extend_segment(segment, points, indices, distance):
                         ) < distance):
                     break
         i -= 1
-        if not edge_case and i < indices[0]:
-            break
-        elif i < indices[0]:
-            i = i % n_points
 
-    i = segment[-1]+1 if not edge_case else (segment[-1]+1) % n_points
+    i = segment[-1] + 1
     while True:
+        if edge_case and i > indices[-1]:
+            i = i % n_points
+        elif i > indices[-1]+1 or i >= n_points:
+            break
+
         if line_segment.dist_point_line(points[i]) < distance:
             segment.append(i)
         else:
@@ -108,10 +114,6 @@ def extend_segment(segment, points, indices, distance):
                         ) < distance):
                     break
         i += 1
-        if not edge_case and i > indices[-1]:
-            break
-        elif i > indices[-1]:
-            i = i % n_points
 
     return segment
 
@@ -237,11 +239,12 @@ def extract_segments(segments, points, indices, mask, distance):
         considered belonging to that line.
     """
     if len(indices) == 2:
-        segment = indices
+        segment = list(indices)
+        segment = extend_segment(segment, points, indices, distance)
     else:
         segment = extract_segment(points, indices, distance)
 
-    if len(segment) > 1:
+    if len(segment) > 2:
         insert_loc = get_insert_loc(segments, segment)
         segments.insert(insert_loc, segment)
 
