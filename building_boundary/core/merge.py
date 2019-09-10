@@ -238,7 +238,7 @@ def merge_segments(segments, angle_epsilon=0.05,
             new_pivot_1 = segments_idx[
                 np.nanargmax(np.array(distances)[segments_idx])
             ]
-            new_pivot_2 = new_pivot_1 + 1
+            new_pivot_2 = (new_pivot_1 + 1) % len(segments)
             if new_pivot_1 not in pivots:
                 bisect.insort_left(pivots, new_pivot_1)
             if new_pivot_2 not in pivots:
