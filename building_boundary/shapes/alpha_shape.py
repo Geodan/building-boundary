@@ -14,10 +14,10 @@ try:
     from CGAL.CGAL_Alpha_shape_2 import Alpha_shape_2
     from CGAL.CGAL_Alpha_shape_2 import REGULAR
     CGAL_AVAILABLE = True
-    cascaded_union = None
+    unary_union = None
     Delaunay = None
 except ImportError:
-    from shapely.ops import cascaded_union
+    from shapely.ops import unary_union
     from scipy.spatial import Delaunay
     CGAL_AVAILABLE = False
     Point_2 = None
@@ -144,7 +144,7 @@ def alpha_shape_python(points, alpha):
             if circum_r < 1.0 / alpha:
                 triangles.append(Polygon(points[t]))
 
-    alpha_shape = cascaded_union(triangles)
+    alpha_shape = unary_union(triangles)
     if type(alpha_shape) == MultiPolygon:
         alpha_shape = MultiPolygon([Polygon(s.exterior) for s in alpha_shape])
     else:
