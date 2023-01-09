@@ -110,7 +110,11 @@ def triangle_geometry(triangle):
     # Semiperimeter of triangle
     s = (a + b + c) / 2.0
     # Area of triangle by Heron's formula
-    area = math.sqrt(s * (s - a) * (s - b) * (s - c))
+    area = 0
+    try:
+        area = math.sqrt(s * (s - a) * (s - b) * (s - c))
+    except ValueError:
+        pass
     if area != 0:
         circum_r = (a * b * c) / (4.0 * area)
     else:
