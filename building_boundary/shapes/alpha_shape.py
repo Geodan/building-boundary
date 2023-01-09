@@ -146,7 +146,7 @@ def alpha_shape_python(points, alpha):
 
     alpha_shape = unary_union(triangles)
     if type(alpha_shape) == MultiPolygon:
-        alpha_shape = MultiPolygon([Polygon(s.exterior) for s in alpha_shape])
+        alpha_shape = MultiPolygon([Polygon(s.exterior) for s in alpha_shape.geoms])
     else:
         alpha_shape = Polygon(alpha_shape.exterior)
 
