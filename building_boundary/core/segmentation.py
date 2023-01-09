@@ -277,7 +277,7 @@ def boundary_segmentation(points, distance):
     shift = np.min(points_shifted, axis=0)
     points_shifted -= shift
 
-    mask = np.ones(len(points_shifted), dtype=np.bool)
+    mask = np.ones(len(points_shifted), dtype=bool)
     indices = np.arange(len(points_shifted))
 
     segments = []
