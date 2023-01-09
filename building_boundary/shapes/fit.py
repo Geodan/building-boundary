@@ -48,7 +48,7 @@ def compute_shape(points, alpha=None, k=None):
             shape = unary_union([shape, shape_ch])
 
         if type(shape) != Polygon:
-            shape = max(shape, key=lambda s: s.area)
+            shape = max(shape.geoms, key=lambda s: s.area)
 
     elif k is not None:
         boundary_points = concave_hull.compute(points, k, True)
