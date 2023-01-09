@@ -7,7 +7,7 @@
 import numpy as np
 from scipy.spatial import ConvexHull
 from shapely.geometry import Polygon
-from shapely.ops import cascaded_union
+from shapely.ops import unary_union
 
 import concave_hull
 
@@ -45,10 +45,11 @@ def compute_shape(points, alpha=None, k=None):
         if k is not None:
             boundary_points = concave_hull.compute(points, k, True)
             shape_ch = Polygon(boundary_points).buffer(0)
-            shape = cascaded_union([shape, shape_ch])
+            if shape_ch.is_valid:
+                shape = unary_union([shape, shape_ch])
 
         if type(shape) != Polygon:
-            shape = max(shape, key=lambda s: s.area)
+            shape = max(shape.geoms, key=lambda s: s.area)
 
     elif k is not None:
         boundary_points = concave_hull.compute(points, k, True)

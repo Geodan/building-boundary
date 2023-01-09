@@ -14,10 +14,10 @@ try:
     from CGAL.CGAL_Alpha_shape_2 import Alpha_shape_2
     from CGAL.CGAL_Alpha_shape_2 import REGULAR
     CGAL_AVAILABLE = True
-    cascaded_union = None
+    unary_union = None
     Delaunay = None
 except ImportError:
-    from shapely.ops import cascaded_union
+    from shapely.ops import unary_union
     from scipy.spatial import Delaunay
     CGAL_AVAILABLE = False
     Point_2 = None
@@ -110,7 +110,11 @@ def triangle_geometry(triangle):
     # Semiperimeter of triangle
     s = (a + b + c) / 2.0
     # Area of triangle by Heron's formula
-    area = math.sqrt(s * (s - a) * (s - b) * (s - c))
+    area = 0
+    try:
+        area = math.sqrt(s * (s - a) * (s - b) * (s - c))
+    except ValueError:
+        pass
     if area != 0:
         circum_r = (a * b * c) / (4.0 * area)
     else:
@@ -144,9 +148,9 @@ def alpha_shape_python(points, alpha):
             if circum_r < 1.0 / alpha:
                 triangles.append(Polygon(points[t]))
 
-    alpha_shape = cascaded_union(triangles)
+    alpha_shape = unary_union(triangles)
     if type(alpha_shape) == MultiPolygon:
-        alpha_shape = MultiPolygon([Polygon(s.exterior) for s in alpha_shape])
+        alpha_shape = MultiPolygon([Polygon(s.exterior) for s in alpha_shape.geoms])
     else:
         alpha_shape = Polygon(alpha_shape.exterior)
 
